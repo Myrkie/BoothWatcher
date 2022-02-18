@@ -17,16 +17,28 @@ namespace BoothWatcher
                     AlreadyAddedID.Add(id);
             if (!File.Exists("Webhooks.txt"))
             {
-                Console.WriteLine("Please create \"Webhooks.txt\" and add webhook urls to file");
-                Thread.Sleep(-1);
+                using (FileStream fs = File.Create("Webhooks.txt"))
+                    Console.WriteLine("Paste in your webhook URL'(s) here");
+
+                #region URLParse
+                
+                string _userinput = Console.ReadLine();
+                
+                string urls = String.Join("\nhttp", _userinput.Split("http"));
+
+                if (urls.StartsWith("\n"))
+                {
+                    urls = urls.Substring(1);
+                }
+                File.AppendAllText("Webhooks.txt", urls);
+                
+                #endregion
             }
             else
             {
-                foreach (string webhook in File.ReadAllLines("Webhooks.txt"))
-                {
-                    clients.Add(new DiscordWebhookClient(webhook));
-                }
+                Startloop();
             }
+            
 
             System.Timers.Timer BoothWatcherTimer = new(60 * 1000)
             {
@@ -48,6 +60,14 @@ namespace BoothWatcher
             Thread.Sleep(-1);
         }
 
+        private static void Startloop()
+        {
+            foreach (string webhook in File.ReadAllLines("Webhooks.txt"))
+            {
+                clients.Add(new DiscordWebhookClient(webhook));
+            }
+        }
+
         private static void DiscordWebhook_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
         {
             if (items.Count != 0)
@@ -64,8 +84,8 @@ namespace BoothWatcher
                                                        url: $"https://booth.pm/en/items/{item.id}",
                                                        fields: new[]
                                                        {
-                                                           new DiscordMessageEmbedField("Price:",
-                                                           item.price)
+                                                           new DiscordMessageEmbedField("Price:", item.price),
+                                                           new DiscordMessageEmbedField("Booth ID:", item.id)
                                                        },
                                                        image: new DiscordMessageEmbedImage(item.thumbnailImageUrls[0]),
                                                        footer: new DiscordMessageEmbedFooter("Made by Keafy",
