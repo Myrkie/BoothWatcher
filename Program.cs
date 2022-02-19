@@ -32,6 +32,8 @@ namespace BoothWatcher
                 }
                 File.AppendAllText("Webhooks.txt", urls);
                 
+                Startloop();
+                
                 #endregion
             }
             else
