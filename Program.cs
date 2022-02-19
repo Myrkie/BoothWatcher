@@ -9,6 +9,18 @@ namespace BoothWatcher
         static Queue<BoothItem> items = new();
         static List<DiscordWebhookClient> clients = new();
         static HashSet<string> AlreadyAddedID = new();
+        private static bool _firstartup = true;
+        
+        #region Static Setup
+
+        private static string _StartupMessage = "Starting Up";
+        private static string _Username = "BoothWatcherV1.6";
+        private static string _AvatarURL = "https://i.imgur.com/gEJk8uX.jpg";
+        private static string _FooterIconAvatar = "https://i.imgur.com/gEJk8uX.jpg";
+        private static string _FooterText = "Made by Keafy";
+        private static bool _tts = false;
+        
+        #endregion
 
         static void Main(string[] args)
         {
@@ -90,18 +102,23 @@ namespace BoothWatcher
                                                            new DiscordMessageEmbedField("Booth ID:", item.id)
                                                        },
                                                        image: new DiscordMessageEmbedImage(item.thumbnailImageUrls[0]),
-                                                       footer: new DiscordMessageEmbedFooter("Made by Keafy",
-                                                                                             "https://i.imgur.com/gEJk8uX.jpg")));
+                                                       footer: new DiscordMessageEmbedFooter(_FooterText, _FooterIconAvatar)));
                     for (int i = 1; i < 4 && i < item.thumbnailImageUrls.Count; i++)
-                        embeds.Add(new DiscordMessageEmbed(url: $"https://booth.pm/en/items/{item.id}",
-                                                           image: new DiscordMessageEmbedImage(item.thumbnailImageUrls[i])));
+                        embeds.Add(new DiscordMessageEmbed(url: $"https://booth.pm/en/items/{item.id}", image: new DiscordMessageEmbedImage(item.thumbnailImageUrls[i])));
                 }
-                DiscordMessage? message = new(username: "BoothWatcher",
-                                                             avatarUrl: "https://i.imgur.com/gEJk8uX.jpg",
-                                                             tts: false,
-                                                             embeds: embeds.ToArray());
+                DiscordMessage? message = new(username: _Username, avatarUrl: _AvatarURL, tts: false, embeds: embeds.ToArray());
                 clients.ForEach(client =>
                 {
+                    if (_firstartup)
+                    {
+                        _firstartup = false;
+                        clients.ForEach(client =>
+                        {
+                            DiscordMessage? _init = new(_StartupMessage, username: _Username, avatarUrl: _AvatarURL, tts: _tts);
+                            client.SendToDiscord(_init);
+                            Thread.Sleep(4000);
+                        });
+                    }
                     client.SendToDiscord(message);
                 });
                 Console.WriteLine($"{item.title} Has been Sent!");
@@ -125,7 +142,18 @@ namespace BoothWatcher
             if (newitemscount > 0)
                 Console.WriteLine($"Added {newitemscount} to queue");
             else
+            {
+                if (_firstartup)
+                {
+                    _firstartup = false;
+                    clients.ForEach(client =>
+                    { 
+                        DiscordMessage? _init = new(_StartupMessage, username: _Username, avatarUrl: _AvatarURL, tts: _tts);
+                        client.SendToDiscord(_init);
+                    });
+                }
                 Console.WriteLine("No items added to queue");
+            }
         }
     }
 }
