@@ -15,6 +15,8 @@
         }
 
         //this is going to hurt a lot of people lol but I'm lazy
+        //tbh it works, Ill look into learning HTML Agility pack later
+        // TODO Possibly change the below async task to use HTML Agility instead of String Split
         public async Task<List<BoothItem>> GetNewBothItemAsync()
         {
             List<BoothItem> items = new();

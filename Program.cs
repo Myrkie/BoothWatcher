@@ -11,8 +11,9 @@ namespace BoothWatcher
         static HashSet<string> AlreadyAddedID = new();
         private static bool _firstartup = true;
         
+        // TODO make every Static in the region below into a json config
         #region Static Properties
-
+        
         private static string _StartupMessage = "Starting Up";
         private static string _Username = "BoothWatcherV1.6";
         private static string _AvatarURL = "https://i.imgur.com/gEJk8uX.jpg";
