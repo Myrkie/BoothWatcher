@@ -11,13 +11,14 @@ namespace BoothWatcher
         static HashSet<string> AlreadyAddedID = new();
         private static bool _firstartup = true;
         
-        #region Static Setup
+        #region Static Properties
 
         private static string _StartupMessage = "Starting Up";
         private static string _Username = "BoothWatcherV1.6";
         private static string _AvatarURL = "https://i.imgur.com/gEJk8uX.jpg";
         private static string _FooterIconAvatar = "https://i.imgur.com/gEJk8uX.jpg";
         private static string _FooterText = "Made by Keafy";
+        private static string _webhook = "Webhooks.txt";
         private static bool _tts = false;
         
         #endregion
@@ -27,9 +28,9 @@ namespace BoothWatcher
             if (File.Exists("AlreadyAddedId.txt"))
                 foreach (string id in File.ReadAllLines("AlreadyAddedId.txt"))
                     AlreadyAddedID.Add(id);
-            if (!File.Exists("Webhooks.txt"))
+            if (!File.Exists(_webhook))
             {
-                using (FileStream fs = File.Create("Webhooks.txt"))
+                using (FileStream fs = File.Create(_webhook))
                     Console.WriteLine("Paste in your webhook URL'(s) here");
 
                 #region URLParse
@@ -42,7 +43,7 @@ namespace BoothWatcher
                 {
                     urls = urls.Substring(1);
                 }
-                File.AppendAllText("Webhooks.txt", urls);
+                File.AppendAllText(_webhook, urls);
                 
                 Startloop();
                 
@@ -76,10 +77,23 @@ namespace BoothWatcher
 
         private static void Startloop()
         {
-            foreach (string webhook in File.ReadAllLines("Webhooks.txt"))
+            Console.WriteLine("Starting With: " + CountLinesInTextFile(_webhook) + " Webhook Connections");
+            foreach (string webhook in File.ReadAllLines(_webhook))
             {
                 clients.Add(new DiscordWebhookClient(webhook));
             }
+        }
+
+        static int CountLinesInTextFile(string f)
+        {
+            var count = 0;
+            using StreamReader r = new StreamReader(f);
+            while (r.ReadLine() != null)
+            {
+                count++;
+            }
+
+            return count;
         }
 
         private static void DiscordWebhook_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
@@ -92,9 +106,7 @@ namespace BoothWatcher
                 {
                     embeds.Add(new DiscordMessageEmbed(item.title,
                                                        color: 16711807,
-                                                       author: new DiscordMessageEmbedAuthor(item.shopName,
-                                                                                             item.shopUrl,
-                                                                                             item.shopImageUrl),
+                                                       author: new DiscordMessageEmbedAuthor(item.shopName, item.shopUrl, item.shopImageUrl),
                                                        url: $"https://booth.pm/en/items/{item.id}",
                                                        fields: new[]
                                                        {
@@ -106,7 +118,7 @@ namespace BoothWatcher
                     for (int i = 1; i < 4 && i < item.thumbnailImageUrls.Count; i++)
                         embeds.Add(new DiscordMessageEmbed(url: $"https://booth.pm/en/items/{item.id}", image: new DiscordMessageEmbedImage(item.thumbnailImageUrls[i])));
                 }
-                DiscordMessage? message = new(username: _Username, avatarUrl: _AvatarURL, tts: false, embeds: embeds.ToArray());
+                DiscordMessage? message = new(username: _Username, avatarUrl: _AvatarURL, tts: _tts, embeds: embeds.ToArray());
                 clients.ForEach(client =>
                 {
                     if (_firstartup)
