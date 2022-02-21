@@ -17,7 +17,7 @@
         //this is going to hurt a lot of people lol but I'm lazy
         //tbh it works, Ill look into learning HTML Agility pack later
         // TODO Possibly change the below async task to use HTML Agility instead of String Split
-        public async Task<List<BoothItem>> GetNewBothItemAsync()
+        public async Task<List<BoothItem>> GetNewBoothItemAsync()
         {
             List<BoothItem> items = new();
             HttpResponseMessage? response = await client.GetAsync("https://booth.pm/en/browse/3D%20Models?adult=include&sort=new");

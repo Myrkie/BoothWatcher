@@ -67,12 +67,12 @@ namespace BoothWatcher
                 Enabled = true
             };
             
-            BoothWatcherTimer.Elapsed += BothWatcher_Elapsed;
+            BoothWatcherTimer.Elapsed += BoothWatcher_Elapsed;
             DiscordWebhook.Elapsed += DiscordWebhook_Elapsed;
             BoothWatcherTimer.Start();
             DiscordWebhook.Start();
             
-            BothWatcher_Elapsed();
+            BoothWatcher_Elapsed();
             Thread.Sleep(-1);
         }
 
@@ -138,10 +138,10 @@ namespace BoothWatcher
             }
         }
 
-        private static async void BothWatcher_Elapsed(object? sender = null, System.Timers.ElapsedEventArgs? e = null)
+        private static async void BoothWatcher_Elapsed(object? sender = null, System.Timers.ElapsedEventArgs? e = null)
         {
             int newitemscount = 0;
-            List<BoothItem>? boothitems = await watcher.GetNewBothItemAsync();
+            List<BoothItem>? boothitems = await watcher.GetNewBoothItemAsync();
             foreach (var item in boothitems)
             {
                 if (!AlreadyAddedID.Contains(item.id))
