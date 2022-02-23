@@ -1,34 +1,37 @@
 ﻿using System;
+using System.Reflection;
 using JNogueira.Discord.Webhook.Client;
 
 namespace BoothWatcher
 {
     internal class Program
     {
-        static Booth watcher = new();
-        static Queue<BoothItem> items = new();
-        static List<DiscordWebhookClient> clients = new();
-        static HashSet<string> AlreadyAddedID = new();
+        static Booth _watcher = new();
+        static Queue<BoothItem> _items = new();
+        static List<DiscordWebhookClient> _clients = new();
+        static HashSet<string> _alreadyAddedId = new();
         private static bool _firstartup = true;
         
         // TODO make every Static in the region below into a json config
         #region Static Properties
         
-        private static string _StartupMessage = "Starting Up";
-        private static string _Username = "BoothWatcherV1.6";
-        private static string _AvatarURL = "https://i.imgur.com/gEJk8uX.jpg";
-        private static string _FooterIconAvatar = "https://i.imgur.com/gEJk8uX.jpg";
-        private static string _FooterText = "Made by Keafy";
+        private static string _startupMessage = "Starting Up";
+        private static string _username = $"BoothWatcher - V{typeof(Program).Assembly.GetName().Version}";
+        private static string _avatarUrl = "https://i.imgur.com/gEJk8uX.jpg";
+        private static string _footerIconAvatar = "https://i.imgur.com/gEJk8uX.jpg";
+        private static string _footerText = "Made by Keafy & Myrkur";
         private static string _webhook = "Webhooks.txt";
+        private static string _watchlist = "WatchList.txt";
         private static bool _tts = false;
         
         #endregion
 
         static void Main(string[] args)
         {
+            if (!File.Exists(_watchlist)) File.Create(_watchlist);
             if (File.Exists("AlreadyAddedId.txt"))
                 foreach (string id in File.ReadAllLines("AlreadyAddedId.txt"))
-                    AlreadyAddedID.Add(id);
+                    _alreadyAddedId.Add(id);
             if (!File.Exists(_webhook))
             {
                 using (FileStream fs = File.Create(_webhook))
@@ -36,9 +39,9 @@ namespace BoothWatcher
 
                 #region URLParse
                 
-                string _userinput = Console.ReadLine();
+                string userinput = Console.ReadLine();
                 
-                string urls = String.Join("\nhttp", _userinput.Split("http"));
+                string urls = String.Join("\nhttp", userinput.Split("http"));
 
                 if (urls.StartsWith("\n"))
                 {
@@ -56,21 +59,21 @@ namespace BoothWatcher
             }
             
 
-            System.Timers.Timer BoothWatcherTimer = new(60 * 1000)
+            System.Timers.Timer boothWatcherTimer = new(60 * 1000)
             {
                 AutoReset = true,
                 Enabled = true
             };
-            System.Timers.Timer DiscordWebhook = new(5000)
+            System.Timers.Timer discordWebhook = new(5000)
             {
                 AutoReset = true,
                 Enabled = true
             };
             
-            BoothWatcherTimer.Elapsed += BoothWatcher_Elapsed;
-            DiscordWebhook.Elapsed += DiscordWebhook_Elapsed;
-            BoothWatcherTimer.Start();
-            DiscordWebhook.Start();
+            boothWatcherTimer.Elapsed += BoothWatcher_Elapsed;
+            discordWebhook.Elapsed += DiscordWebhook_Elapsed;
+            boothWatcherTimer.Start();
+            discordWebhook.Start();
             
             BoothWatcher_Elapsed();
             Thread.Sleep(-1);
@@ -81,7 +84,7 @@ namespace BoothWatcher
             Console.WriteLine("Starting With: " + CountLinesInTextFile(_webhook) + " Webhook Connections");
             foreach (string webhook in File.ReadAllLines(_webhook))
             {
-                clients.Add(new DiscordWebhookClient(webhook));
+                _clients.Add(new DiscordWebhookClient(webhook));
             }
         }
 
@@ -99,9 +102,9 @@ namespace BoothWatcher
 
         private static void DiscordWebhook_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
         {
-            if (items.Count != 0)
+            if (_items.Count != 0)
             {
-                BoothItem? item = items.Dequeue();
+                BoothItem? item = _items.Dequeue();
                 List<DiscordMessageEmbed> embeds = new();
                 if (item.thumbnailImageUrls.Count > 0)
                 {
@@ -115,23 +118,16 @@ namespace BoothWatcher
                                                            new DiscordMessageEmbedField("Booth ID:", item.id)
                                                        },
                                                        image: new DiscordMessageEmbedImage(item.thumbnailImageUrls[0]),
-                                                       footer: new DiscordMessageEmbedFooter(_FooterText, _FooterIconAvatar)));
+                                                       footer: new DiscordMessageEmbedFooter(_footerText, _footerIconAvatar)));
                     for (int i = 1; i < 4 && i < item.thumbnailImageUrls.Count; i++)
                         embeds.Add(new DiscordMessageEmbed(url: $"https://booth.pm/en/items/{item.id}", image: new DiscordMessageEmbedImage(item.thumbnailImageUrls[i])));
                 }
-                DiscordMessage? message = new(username: _Username, avatarUrl: _AvatarURL, tts: _tts, embeds: embeds.ToArray());
-                clients.ForEach(client =>
+                DiscordMessage? message = new(username: _username, avatarUrl: _avatarUrl, tts: _tts, embeds: embeds.ToArray());
+                _clients.ForEach(client =>
                 {
-                    if (_firstartup)
-                    {
-                        _firstartup = false;
-                        clients.ForEach(client =>
-                        {
-                            DiscordMessage? _init = new(_StartupMessage, username: _Username, avatarUrl: _AvatarURL, tts: _tts);
-                            client.SendToDiscord(_init);
-                            Thread.Sleep(4000);
-                        });
-                    }
+                    StartupCheck();
+                    CheckWatchList(item);
+                    Thread.Sleep(1000);
                     client.SendToDiscord(message);
                 });
                 Console.WriteLine($"{item.title} Has been Sent!");
@@ -141,14 +137,14 @@ namespace BoothWatcher
         private static async void BoothWatcher_Elapsed(object? sender = null, System.Timers.ElapsedEventArgs? e = null)
         {
             int newitemscount = 0;
-            List<BoothItem>? boothitems = await watcher.GetNewBoothItemAsync();
+            List<BoothItem>? boothitems = await _watcher.GetNewBoothItemAsync();
             foreach (var item in boothitems)
             {
-                if (!AlreadyAddedID.Contains(item.id))
+                if (!_alreadyAddedId.Contains(item.id))
                 {
                     File.AppendAllText("AlreadyAddedId.txt", item.id + Environment.NewLine);
-                    AlreadyAddedID.Add(item.id);
-                    items.Enqueue(item);
+                    _alreadyAddedId.Add(item.id);
+                    _items.Enqueue(item);
                     newitemscount++;
                 }
             }
@@ -156,16 +152,34 @@ namespace BoothWatcher
                 Console.WriteLine($"Added {newitemscount} to queue");
             else
             {
-                if (_firstartup)
-                {
-                    _firstartup = false;
-                    clients.ForEach(client =>
-                    { 
-                        DiscordMessage? _init = new(_StartupMessage, username: _Username, avatarUrl: _AvatarURL, tts: _tts);
-                        client.SendToDiscord(_init);
-                    });
-                }
+                StartupCheck();
                 Console.WriteLine("No items added to queue");
+            }
+        }
+
+        private static void StartupCheck()
+        {
+            if (!_firstartup) return;
+            {
+                _firstartup = false;
+                _clients.ForEach(client =>
+                {
+                    DiscordMessage? init = new(_startupMessage, username: _username, avatarUrl: _avatarUrl, tts: _tts);
+                    client.SendToDiscord(init);
+                    Thread.Sleep(4000);
+                });
+            }
+        }
+
+        private static void CheckWatchList(BoothItem item)
+        {
+            if (File.ReadAllText(_watchlist).Contains(item.shopUrl))
+            {
+                _clients.ForEach(client =>
+                { 
+                    DiscordMessage? watchlistitem = new($":arrow_down:  Post by author is on watchlist  :arrow_down: // <{item.shopUrl}>", username: _username, avatarUrl: _avatarUrl, tts: _tts);
+                    client.SendToDiscord(watchlistitem);
+                });
             }
         }
     }
