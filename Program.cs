@@ -136,25 +136,29 @@ namespace BoothWatcher
 
         private static async void BoothWatcher_Elapsed(object? sender = null, System.Timers.ElapsedEventArgs? e = null)
         {
-            int newitemscount = 0;
-            List<BoothItem>? boothitems = await _watcher.GetNewBoothItemAsync();
-            foreach (var item in boothitems)
+            try
             {
-                if (!_alreadyAddedId.Contains(item.id))
+                int newitemscount = 0;
+                List<BoothItem>? boothitems = await _watcher.GetNewBoothItemAsync();
+                foreach (var item in boothitems)
                 {
-                    File.AppendAllText("AlreadyAddedId.txt", item.id + Environment.NewLine);
-                    _alreadyAddedId.Add(item.id);
-                    _items.Enqueue(item);
-                    newitemscount++;
+                    if (!_alreadyAddedId.Contains(item.id))
+                    {
+                        File.AppendAllText("AlreadyAddedId.txt", item.id + Environment.NewLine);
+                        _alreadyAddedId.Add(item.id);
+                        _items.Enqueue(item);
+                        newitemscount++;
+                    }
+                }
+                if (newitemscount > 0)
+                    Console.WriteLine($"Added {newitemscount} to queue");
+                else
+                {
+                    StartupCheck();
+                    Console.WriteLine("No items added to queue");
                 }
             }
-            if (newitemscount > 0)
-                Console.WriteLine($"Added {newitemscount} to queue");
-            else
-            {
-                StartupCheck();
-                Console.WriteLine("No items added to queue");
-            }
+            catch { }
         }
 
         private static void StartupCheck()
