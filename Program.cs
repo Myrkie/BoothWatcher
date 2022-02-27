@@ -1,6 +1,4 @@
-﻿using System;
-using System.Reflection;
-using JNogueira.Discord.Webhook.Client;
+﻿using JNogueira.Discord.Webhook.Client;
 
 namespace BoothWatcher
 {
@@ -22,6 +20,8 @@ namespace BoothWatcher
         private static string _footerText = "Made by Keafy & Myrkur";
         private static string _webhook = "Webhooks.txt";
         private static string _watchlist = "WatchList.txt";
+        private static string _blacklist = "BlackList.txt";
+        private static string _alreadyadded = "AlreadyAddedId.txt";
         private static bool _tts = false;
         
         #endregion
@@ -29,8 +29,9 @@ namespace BoothWatcher
         static void Main(string[] args)
         {
             if (!File.Exists(_watchlist)) File.Create(_watchlist);
-            if (File.Exists("AlreadyAddedId.txt"))
-                foreach (string id in File.ReadAllLines("AlreadyAddedId.txt"))
+            if (!File.Exists(_blacklist)) File.Create(_blacklist);
+            if (File.Exists(_alreadyadded))
+                foreach (string id in File.ReadAllLines(_alreadyadded))
                     _alreadyAddedId.Add(id);
             if (!File.Exists(_webhook))
             {
@@ -106,19 +107,18 @@ namespace BoothWatcher
             {
                 BoothItem? item = _items.Dequeue();
                 List<DiscordMessageEmbed> embeds = new();
-                if (item.thumbnailImageUrls.Count > 0)
+                if (!File.ReadAllText(_blacklist).Contains(item.shopUrl) && item.thumbnailImageUrls.Count > 0)
                 {
-                    embeds.Add(new DiscordMessageEmbed(item.title,
-                                                       color: 16711807,
-                                                       author: new DiscordMessageEmbedAuthor(item.shopName, item.shopUrl, item.shopImageUrl),
-                                                       url: $"https://booth.pm/en/items/{item.id}",
-                                                       fields: new[]
-                                                       {
-                                                           new DiscordMessageEmbedField("Price:", item.price),
-                                                           new DiscordMessageEmbedField("Booth ID:", item.id)
-                                                       },
-                                                       image: new DiscordMessageEmbedImage(item.thumbnailImageUrls[0]),
-                                                       footer: new DiscordMessageEmbedFooter(_footerText, _footerIconAvatar)));
+                    embeds.Add(new DiscordMessageEmbed(item.title, color: 16711807,
+                        author: new DiscordMessageEmbedAuthor(item.shopName, item.shopUrl, item.shopImageUrl),
+                        url: $"https://booth.pm/en/items/{item.id}",
+                        fields: new[]
+                        {
+                            new DiscordMessageEmbedField("Price:", item.price),
+                            new DiscordMessageEmbedField("Booth ID:", item.id)
+                        },
+                        image: new DiscordMessageEmbedImage(item.thumbnailImageUrls[0]),
+                        footer: new DiscordMessageEmbedFooter(FooterText, _footerIconAvatar)));
                     for (int i = 1; i < 4 && i < item.thumbnailImageUrls.Count; i++)
                         embeds.Add(new DiscordMessageEmbed(url: $"https://booth.pm/en/items/{item.id}", image: new DiscordMessageEmbedImage(item.thumbnailImageUrls[i])));
                 }
@@ -130,7 +130,8 @@ namespace BoothWatcher
                     Thread.Sleep(1000);
                     client.SendToDiscord(message);
                 });
-                Console.WriteLine($"{item.title} Has been Sent!");
+                if (!File.ReadAllText(_blacklist).Contains(item.shopUrl))
+                    Console.WriteLine($"{item.title} Has been Sent!");
             }
         }
 
@@ -144,10 +145,17 @@ namespace BoothWatcher
                 {
                     if (!_alreadyAddedId.Contains(item.id))
                     {
-                        File.AppendAllText("AlreadyAddedId.txt", item.id + Environment.NewLine);
+                        File.AppendAllText(_alreadyadded, item.id + Environment.NewLine);
                         _alreadyAddedId.Add(item.id);
                         _items.Enqueue(item);
-                        newitemscount++;
+                        if (!File.ReadAllText(_blacklist).Contains(item.shopUrl))
+                        {
+                            newitemscount++;
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Blacklisted items from author removed from queue");
+                        }
                     }
                 }
                 if (newitemscount > 0)
