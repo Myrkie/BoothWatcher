@@ -1,13 +1,18 @@
-﻿using System;
-using System.IO;
-using System.Net;
+﻿using System.Net;
 using System.Text;
-using System.Collections.Generic;
 using Newtonsoft.Json;
 
+#pragma warning disable CS8600
+#pragma warning disable CS8601
+#pragma warning disable CS8602
+#pragma warning disable CS8603
+#pragma warning disable CS8618
+#pragma warning disable CS8625
 #pragma warning disable IDE0044
+#pragma warning disable IDE0079
 #pragma warning disable IDE0090
 #pragma warning disable IDE1006
+#pragma warning disable SYSLIB0014
 
 namespace ComfyUtils.Discord
 {
@@ -77,15 +82,34 @@ namespace ComfyUtils.Discord
             set
             {
                 InternalAvatar = value;
+                InternalAvatarBase64 = Convert.ToBase64String(value);
                 HttpWebRequest request = WebRequest.CreateHttp($"{BaseURL}/{ID}/{Token}");
                 request.Method = "PATCH";
                 request.ContentType = "application/json";
                 Stream requestStream = request.GetRequestStream();
-                byte[] data = Encoding.UTF8.GetBytes($"{{\"avatar\":\"data:image/jpeg;base64, {Convert.ToBase64String(value)}\"}}");
+                byte[] data = Encoding.UTF8.GetBytes($"{{\"avatar\":\"data:image/jpeg;base64, {InternalAvatarBase64}\"}}");
                 requestStream.Write(data, 0, data.Length);
                 request.GetResponse();
             }
         }
+        internal string InternalAvatarBase64;
+        public string AvatarBase64
+        {
+            get => InternalAvatarBase64;
+            set
+            {
+                InternalAvatarBase64 = value;
+                InternalAvatar = Convert.FromBase64String(value);
+                HttpWebRequest request = WebRequest.CreateHttp($"{BaseURL}/{ID}/{Token}");
+                request.Method = "PATCH";
+                request.ContentType = "application/json";
+                Stream requestStream = request.GetRequestStream();
+                byte[] data = Encoding.UTF8.GetBytes($"{{\"avatar\":\"data:image/jpeg;base64, {value}\"}}");
+                requestStream.Write(data, 0, data.Length);
+                request.GetResponse();
+            }
+        }
+
         public string ServerID { get; }
         public string ChannelID { get; }
         public Webhook(string url)
@@ -180,7 +204,7 @@ namespace ComfyUtils.Discord
             request.Method = "POST";
             request.ContentType = "application/json";
             Stream requestStream = request.GetRequestStream();
-            byte[] data = Encoding.UTF8.GetBytes($"{{\"embeds\":[{JsonConvert.SerializeObject(embeds)}]}}");
+            byte[] data = Encoding.UTF8.GetBytes($"{{\"embeds\":{JsonConvert.SerializeObject(embeds)}}}");
             requestStream.Write(data, 0, data.Length);
             HttpWebResponse response = (HttpWebResponse)request.GetResponse();
             StreamReader responseStream = new StreamReader(response.GetResponseStream(), Encoding.UTF8);
@@ -318,8 +342,12 @@ namespace ComfyUtils.Discord
         }
         public Footer SetFooter(string text, string icon = null)
         {
-            footer.text = text;
-            footer.icon_url = icon ?? null;
+            Footer footer = new Footer
+            {
+                text = text,
+                icon_url = icon ?? null
+            };
+            this.footer = footer;
             return footer;
         }
         public void SetURL(string url) => this.url = url;

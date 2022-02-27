@@ -1,6 +1,9 @@
 ﻿using System;
 
+#pragma warning disable CS8603
+#pragma warning disable CS8625
 #pragma warning disable IDE0036
+#pragma warning disable IDE0071
 
 namespace ComfyUtils
 {

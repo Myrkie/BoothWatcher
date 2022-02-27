@@ -1,6 +1,6 @@
 ﻿using System.Text;
-using System.Collections.Generic;
 
+#pragma warning disable CS8618
 #pragma warning disable IDE0090
 
 namespace BoothWatcher
