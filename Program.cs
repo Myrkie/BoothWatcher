@@ -1,185 +1,189 @@
 ﻿using System;
-using System.Reflection;
-using JNogueira.Discord.Webhook.Client;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Timers;
+using System.Collections.Generic;
+using Thread = System.Threading.Thread;
+using ComfyUtils;
+using ComfyUtils.Discord;
+
+#pragma warning disable IDE0036
+#pragma warning disable IDE0044
+#pragma warning disable IDE0090
 
 namespace BoothWatcher
 {
-    internal class Program
+    public class Program
     {
-        static Booth _watcher = new();
-        static Queue<BoothItem> _items = new();
-        static List<DiscordWebhookClient> _clients = new();
-        static HashSet<string> _alreadyAddedId = new();
-        private static bool _firstartup = true;
-        
-        // TODO make every Static in the region below into a json config
-        #region Static Properties
-        
-        private static string _startupMessage = "Starting Up";
-        private static string _username = $"BoothWatcher - V{typeof(Program).Assembly.GetName().Version}";
-        private static string _avatarUrl = "https://i.imgur.com/gEJk8uX.jpg";
-        private static string _footerIconAvatar = "https://i.imgur.com/gEJk8uX.jpg";
-        private static string _footerText = "Made by Keafy & Myrkur";
-        private static string _webhook = "Webhooks.txt";
-        private static string _watchlist = "WatchList.txt";
-        private static bool _tts = false;
-        
-        #endregion
-
-        static void Main(string[] args)
+        private static bool Watching => BoothTimer.Enabled && HookTimer.Enabled;
+        private static Queue<BoothItem> Items = new Queue<BoothItem>();
+        private static List<string> Watchlist = new List<string>();
+        private static List<Webhook> Hooks = new List<Webhook>();
+        private static List<string> IDs = new List<string>();
+        public static Config Config => Helper.Config;
+        private static Booth Watcher = new Booth();
+        private static ConfigHelper<Config> Helper;
+        private static Timer BoothTimer;
+        private static Timer HookTimer;
+        public static void Main()
         {
-            if (!File.Exists(_watchlist)) File.Create(_watchlist);
-            if (File.Exists("AlreadyAddedId.txt"))
-                foreach (string id in File.ReadAllLines("AlreadyAddedId.txt"))
-                    _alreadyAddedId.Add(id);
-            if (!File.Exists(_webhook))
+            Helper = new ConfigHelper<Config>($"{Environment.CurrentDirectory}\\BoothWatcherConfig.json", true);
+            Watchlist = Config.Watchlist.ToList();
+            foreach (string webhook in Config.Webhooks)
             {
-                using (FileStream fs = File.Create(_webhook))
-                    Console.WriteLine("Paste in your webhook URL'(s) here");
-
-                #region URLParse
-                
-                string userinput = Console.ReadLine();
-                
-                string urls = String.Join("\nhttp", userinput.Split("http"));
-
-                if (urls.StartsWith("\n"))
+                try
                 {
-                    urls = urls.Substring(1);
+                    Hooks.Add(new Webhook(webhook));
                 }
-                File.AppendAllText(_webhook, urls);
-                
-                Startloop();
-                
-                #endregion
-            }
-            else
-            {
-                Startloop();
-            }
-            
-
-            System.Timers.Timer boothWatcherTimer = new(60 * 1000)
-            {
-                AutoReset = true,
-                Enabled = true
-            };
-            System.Timers.Timer discordWebhook = new(5000)
-            {
-                AutoReset = true,
-                Enabled = true
-            };
-            
-            boothWatcherTimer.Elapsed += BoothWatcher_Elapsed;
-            discordWebhook.Elapsed += DiscordWebhook_Elapsed;
-            boothWatcherTimer.Start();
-            discordWebhook.Start();
-            
-            BoothWatcher_Elapsed();
-            Thread.Sleep(-1);
-        }
-
-        private static void Startloop()
-        {
-            Console.WriteLine("Starting With: " + CountLinesInTextFile(_webhook) + " Webhook Connections");
-            foreach (string webhook in File.ReadAllLines(_webhook))
-            {
-                _clients.Add(new DiscordWebhookClient(webhook));
-            }
-        }
-
-        static int CountLinesInTextFile(string f)
-        {
-            var count = 0;
-            using StreamReader r = new StreamReader(f);
-            while (r.ReadLine() != null)
-            {
-                count++;
-            }
-
-            return count;
-        }
-
-        private static void DiscordWebhook_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
-        {
-            if (_items.Count != 0)
-            {
-                BoothItem? item = _items.Dequeue();
-                List<DiscordMessageEmbed> embeds = new();
-                if (item.thumbnailImageUrls.Count > 0)
+                catch
                 {
-                    embeds.Add(new DiscordMessageEmbed(item.title,
-                                                       color: 16711807,
-                                                       author: new DiscordMessageEmbedAuthor(item.shopName, item.shopUrl, item.shopImageUrl),
-                                                       url: $"https://booth.pm/en/items/{item.id}",
-                                                       fields: new[]
-                                                       {
-                                                           new DiscordMessageEmbedField("Price:", item.price),
-                                                           new DiscordMessageEmbedField("Booth ID:", item.id)
-                                                       },
-                                                       image: new DiscordMessageEmbedImage(item.thumbnailImageUrls[0]),
-                                                       footer: new DiscordMessageEmbedFooter(_footerText, _footerIconAvatar)));
-                    for (int i = 1; i < 4 && i < item.thumbnailImageUrls.Count; i++)
-                        embeds.Add(new DiscordMessageEmbed(url: $"https://booth.pm/en/items/{item.id}", image: new DiscordMessageEmbedImage(item.thumbnailImageUrls[i])));
-                }
-                DiscordMessage? message = new(username: _username, avatarUrl: _avatarUrl, tts: _tts, embeds: embeds.ToArray());
-                _clients.ForEach(client =>
-                {
-                    StartupCheck();
-                    CheckWatchList(item);
-                    Thread.Sleep(1000);
-                    client.SendToDiscord(message);
-                });
-                Console.WriteLine($"{item.title} Has been Sent!");
-            }
-        }
-
-        private static async void BoothWatcher_Elapsed(object? sender = null, System.Timers.ElapsedEventArgs? e = null)
-        {
-            int newitemscount = 0;
-            List<BoothItem>? boothitems = await _watcher.GetNewBoothItemAsync();
-            foreach (var item in boothitems)
-            {
-                if (!_alreadyAddedId.Contains(item.id))
-                {
-                    File.AppendAllText("AlreadyAddedId.txt", item.id + Environment.NewLine);
-                    _alreadyAddedId.Add(item.id);
-                    _items.Enqueue(item);
-                    newitemscount++;
+                    Log.Msg($"[Failed To Add Webhook] {webhook}");
                 }
             }
-            if (newitemscount > 0)
-                Console.WriteLine($"Added {newitemscount} to queue");
-            else
+            IDs = File.ReadAllLines("IDs.txt").ToList();
+
+            BoothTimer = new Timer(60 * 1000);
+            HookTimer = new Timer(5000);
+            BoothTimer.Elapsed += GetItems;
+            HookTimer.Elapsed += SendItems;
+
+            MainMenu();
+            Log.Pause();
+        }
+        private static void MainMenu()
+        {
+            Log.Msg($"[1] {(Watching ? "Stop Watching" : "Start Watching")}");
+            Log.Msg("[2] Add Webhook");
+            Log.Msg("[3] Add User To Watchlist");
+            Log.Msg($"[4] Adult Filter [{(Config.AdultFilter ? "On" : "Off")}]");
+            Log.Msg($"[5] Watchlist TTS [{(Config.TTS ? "On" : "Off")}]");
+            switch (Log.KeyInput().Key)
+            {
+                case ConsoleKey.D1:
+                    if (Hooks.Count <= 0)
+                    {
+                        Log.Msg("No Webhooks");
+                        break;
+                    }
+                    if (Watching)
+                    {
+                        BoothTimer.Stop();
+                        HookTimer.Stop();
+                    }
+                    else
+                    {
+                        BoothTimer.Start();
+                        HookTimer.Start();
+                    }
+                    break;
+
+                case ConsoleKey.D2:
+                    try
+                    {
+                        Hooks.Add(new Webhook(Log.Input("\nWebhook URL")));
+                        StringBuilder builder = new StringBuilder();
+                        foreach (Webhook hook in Hooks)
+                        {
+                            builder.AppendLine(hook.URL);
+                        }
+                        Config.Webhooks = builder.ToString().Split('\n');
+                    }
+                    catch
+                    {
+                        Log.Msg("Failed To Get Webhook");
+                        break;
+                    }
+                    Log.Msg("Webhook Added");
+                    break;
+
+                case ConsoleKey.D3:
+                    Watchlist.Add(Log.Input("Booth Author"));
+                    Config.Watchlist = Watchlist.ToArray();
+                    Log.Msg("Author Added");
+                    break;
+
+                case ConsoleKey.D4:
+                    Config.AdultFilter = !Config.AdultFilter;
+                    break;
+
+                case ConsoleKey.D5:
+                    Config.TTS = !Config.TTS;
+                    break;
+
+                default:
+                    Log.KeyInput("Invalid Key");
+                    break;
+            }
+            Log.Clear();
+            MainMenu();
+        }
+        private static void SendItems(object sender = null, ElapsedEventArgs args = null)
+        {
+            if (Items.Count > 0)
             {
                 StartupCheck();
-                Console.WriteLine("No items added to queue");
+                BoothItem item = Items.Dequeue();
+                List<Embed> embeds = new List<Embed>();
+                Embed embed = new Embed(item.Title);
+                embed.SetAuthor(item.ShopName, item.ShopURL, item.ShopImageURL);
+                embed.SetURL($"https://booth.pm/en/items/{item.ID}");
+                embed.AddField("Price", item.Price);
+                embed.AddField("Booth ID", item.ID);
+                embed.SetFooter(Config.FooterText, Config.FooterIcon);
+                if (item.ThumbnailURLs.Count > 0)
+                {
+                    embed.AddImage(item.ThumbnailURLs[0]);
+                    for (int i = 1; i < 4 && i < item.ThumbnailURLs.Count; i++)
+                    {
+                        Embed imageEmbed = new Embed(null);
+                        imageEmbed.SetURL($"https://booth.pm/en/items/{item.ID}");
+                        imageEmbed.AddImage(item.ThumbnailURLs[i]);
+                        embeds.Add(imageEmbed);
+                    }
+                }
+                embeds.Add(embed);
+                CheckWatchList(item);
+                Thread.Sleep(1000);
+                foreach (Webhook hook in Hooks)
+                {
+                    hook.SendEmbeds(embeds.ToArray());
+                }
+                Log.Msg($"[Sent] {item.Title} [{item.ID}]");
             }
         }
-
+        private static async void GetItems(object sender = null, ElapsedEventArgs args = null)
+        {
+            List<BoothItem> items = await Watcher.GetNewBoothItemAsync();
+            foreach (BoothItem item in items)
+            {
+                if (!IDs.Contains(item.ID))
+                {
+                    File.AppendAllText("IDs.txt", $"{item.ID}\n");
+                    IDs.Add(item.ID);
+                    Items.Enqueue(item);
+                    Log.Msg($"[Added To Queue] {item.Title} [{item.ID}]");
+                }
+            }
+        }
         private static void StartupCheck()
         {
-            if (!_firstartup) return;
+            foreach (Webhook hook in Hooks)
             {
-                _firstartup = false;
-                _clients.ForEach(client =>
+                if (hook.Name != Config.WebhookName)
                 {
-                    DiscordMessage? init = new(_startupMessage, username: _username, avatarUrl: _avatarUrl, tts: _tts);
-                    client.SendToDiscord(init);
-                    Thread.Sleep(4000);
-                });
+                    hook.Name = Config.WebhookName;
+                }
             }
         }
-
         private static void CheckWatchList(BoothItem item)
         {
-            if (File.ReadAllText(_watchlist).Contains(item.shopUrl))
+            if (Watchlist.Contains(item.ShopURL))
             {
-                _clients.ForEach(client =>
-                { 
-                    DiscordMessage? watchlistitem = new($":arrow_down:  Post by author is on watchlist  :arrow_down: // <{item.shopUrl}>", username: _username, avatarUrl: _avatarUrl, tts: _tts);
-                    client.SendToDiscord(watchlistitem);
-                });
+                foreach (Webhook hook in Hooks)
+                {
+                    hook.SendMessage($":arrow_down: Watchlist Author Post  :arrow_down: // <{item.ShopURL}>", Config.TTS);
+                }
             }
         }
     }

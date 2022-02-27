@@ -1,31 +1,30 @@
-﻿using System;
+﻿using System.Text;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+
+#pragma warning disable IDE0090
 
 namespace BoothWatcher
 {
     public class BoothItem
     {
-        public string? id { get; set; }
-        public string? title { get; set; }
-        public string? price { get; set; }
-        public List<string> thumbnailImageUrls = new List<string>();
-        public string? shopName { get; set; }
-        public string? shopUrl { get; set; }
-        public string? shopImageUrl { get; set; }
+        public string ID { get; set; }
+        public string Title { get; set; }
+        public string Price { get; set; }
+        public List<string> ThumbnailURLs = new List<string>();
+        public string ShopName { get; set; }
+        public string ShopURL { get; set; }
+        public string ShopImageURL { get; set; }
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine($"ID: {id}");
-            sb.AppendLine($"Title: {title}");
-            sb.AppendLine($"Price: {price}");
-            sb.AppendLine($"Thumbnail Image URL: {thumbnailImageUrls}");
-            sb.AppendLine($"Shop Name: {shopName}");
-            sb.AppendLine($"Shop URL: {shopUrl}");
-            sb.AppendLine($"Shop Image URL: {shopImageUrl}");
-            return sb.ToString();
+            StringBuilder builder = new StringBuilder();
+            builder.AppendLine($"ID: {ID}");
+            builder.AppendLine($"Title: {Title}");
+            builder.AppendLine($"Price: {Price}");
+            builder.AppendLine($"Thumbnail Image URL: {ThumbnailURLs}");
+            builder.AppendLine($"Shop Name: {ShopName}");
+            builder.AppendLine($"Shop URL: {ShopURL}");
+            builder.AppendLine($"Shop Image URL: {ShopImageURL}");
+            return builder.ToString();
         }
     }
 }
