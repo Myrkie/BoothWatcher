@@ -5,8 +5,9 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyVersion>1.8</AssemblyVersion>
-    <FileVersion>1.8</FileVersion>
+    <AssemblyVersion>1.9</AssemblyVersion>
+    <FileVersion>1.9</FileVersion>
+    <PackageVersion>1.9.0</PackageVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,6 +17,12 @@
   <ItemGroup>
     <PackageReference Include="discord-webhook-client" Version="3.1.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Deepl, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
+      <HintPath>Dependancies\Deepl.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>

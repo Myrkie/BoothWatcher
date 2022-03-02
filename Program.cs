@@ -1,4 +1,7 @@
 ﻿using JNogueira.Discord.Webhook.Client;
+using DeeplTranslator = Deepl.Deepl; 
+using Language = Deepl.Deepl.Language;
+
 
 namespace BoothWatcher
 {
@@ -58,7 +61,6 @@ namespace BoothWatcher
             {
                 Startloop();
             }
-            
 
             System.Timers.Timer boothWatcherTimer = new(60 * 1000)
             {
@@ -115,7 +117,8 @@ namespace BoothWatcher
                         fields: new[]
                         {
                             new DiscordMessageEmbedField("Price:", item.price),
-                            new DiscordMessageEmbedField("Booth ID:", item.id)
+                            new DiscordMessageEmbedField("Booth ID:", item.id),
+                            new DiscordMessageEmbedField("Translated Title: ", TranslateText(item.title))
                         },
                         image: new DiscordMessageEmbedImage(item.thumbnailImageUrls[0]),
                         footer: new DiscordMessageEmbedFooter(FooterText, _footerIconAvatar)));
@@ -133,6 +136,12 @@ namespace BoothWatcher
                 if (!File.ReadAllText(_blacklist).Contains(item.shopUrl))
                     Console.WriteLine($"{item.title} Has been Sent!");
             }
+        }
+
+        private static string TranslateText(string input)
+        {
+            var translate = new DeeplTranslator(selectedLanguage: Language.JP, targetLanguage: Language.EN, input);
+            return translate.Resp;
         }
 
         private static async void BoothWatcher_Elapsed(object? sender = null, System.Timers.ElapsedEventArgs? e = null)

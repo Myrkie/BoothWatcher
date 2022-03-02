@@ -13,3 +13,7 @@ Get notified of new booth models using discord webhooks in c#
 > Author Post Notification: Add the url to your chosen author to WatchList.txt one link per line to get notified whenever they post.
 
 > BlackList: Add the url to your chosen author to BlackList.txt one link per line to ignore all posts by author.
+
+
+External Libraries used:
+- [DeepL-API](https://github.com/Stupeflip/Deepl) - Simple DeepL
