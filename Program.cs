@@ -20,7 +20,7 @@ namespace BoothWatcher
         private static string _username = $"BoothWatcher - V{typeof(Program).Assembly.GetName().Version}";
         private static string _avatarUrl = "https://i.imgur.com/gEJk8uX.jpg";
         private static string _footerIconAvatar = "https://i.imgur.com/gEJk8uX.jpg";
-        private static string _footerText = "Made by Keafy & Myrkur";
+        private static readonly string _footerText = "Made by Keafy & Myrkur";
         private static string _webhook = "Webhooks.txt";
         private static string _watchlist = "WatchList.txt";
         private static string _blacklist = "BlackList.txt";
@@ -121,7 +121,7 @@ namespace BoothWatcher
                             new DiscordMessageEmbedField("Translated Title: ", TranslateText(item.title))
                         },
                         image: new DiscordMessageEmbedImage(item.thumbnailImageUrls[0]),
-                        footer: new DiscordMessageEmbedFooter(FooterText, _footerIconAvatar)));
+                        footer: new DiscordMessageEmbedFooter(_footerText, _footerIconAvatar)));
                     for (int i = 1; i < 4 && i < item.thumbnailImageUrls.Count; i++)
                         embeds.Add(new DiscordMessageEmbed(url: $"https://booth.pm/en/items/{item.id}", image: new DiscordMessageEmbedImage(item.thumbnailImageUrls[i])));
                 }
