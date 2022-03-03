@@ -135,6 +135,7 @@ namespace BoothWatcher
         private static string TranslateText(string input)
         {
             var translate = new DeeplTranslator(selectedLanguage: Language.JP, targetLanguage: Language.EN, input);
+            if (string.IsNullOrEmpty(translate.Resp)) return "Failed To translate";
             return translate.Resp;
         }
 
