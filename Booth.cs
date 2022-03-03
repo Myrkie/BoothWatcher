@@ -34,19 +34,19 @@
                     while ((line = reader.ReadLine()) != null)
                     {
                         if(line.Contains("data-product-id="))
-                            item.id = line.Split("data-product-id=\"", StringSplitOptions.None)[1].Split('"')[0];
+                            item.Id = line.Split("data-product-id=\"", StringSplitOptions.None)[1].Split('"')[0];
                         if (line.Contains("data-original"))
                             item.thumbnailImageUrls.Add(line.Split("data-original=\"", StringSplitOptions.None)[1].Split('"')[0]);
                         if (line.Contains("item-card__title-anchor--multiline nav"))
-                            item.title = line.Split("item-card__title-anchor--multiline nav\"", StringSplitOptions.None)[1].Split('>')[1];
+                            item.Title = line.Split("item-card__title-anchor--multiline nav\"", StringSplitOptions.None)[1].Split('>')[1];
                         if (line.Contains("price u-text-primary u-text-left u-tpg-caption2\">"))
-                            item.price = line.Split("price u-text-primary u-text-left u-tpg-caption2\">", StringSplitOptions.None)[1];
+                            item.Price = line.Split("price u-text-primary u-text-left u-tpg-caption2\">", StringSplitOptions.None)[1];
                         if (line.Contains("class=\"item-card__shop-name\">"))
-                            item.shopName = line.Split("class=\"item-card__shop-name\">")[1];
+                            item.ShopName = line.Split("class=\"item-card__shop-name\">")[1];
                         if (line.Contains("item-card__shop-name-anchor"))
-                            item.shopUrl = line.Split("item-card__shop-name-anchor", StringSplitOptions.None)[1].Split("href=\"")[1].Split('"')[0];
+                            item.ShopUrl = line.Split("item-card__shop-name-anchor", StringSplitOptions.None)[1].Split("href=\"")[1].Split('"')[0];
                         if (line.Contains("user-avatar"))
-                            item.shopImageUrl = line.Split("user-avatar", StringSplitOptions.None)[1].Split("src=\"", StringSplitOptions.None)[1].Split('"')[0];
+                            item.ShopImageUrl = line.Split("user-avatar", StringSplitOptions.None)[1].Split("src=\"", StringSplitOptions.None)[1].Split('"')[0];
                     }
                     items.Add(item);
                 }

@@ -42,19 +42,25 @@ namespace BoothWatcher
                     Console.WriteLine("Paste in your webhook URL'(s) here");
 
                 #region URLParse
-                
-                string userinput = Console.ReadLine();
-                
-                string urls = String.Join("\nhttp", userinput.Split("http"));
-
-                if (urls.StartsWith("\n"))
+                string? userinput = Console.ReadLine();
+                if (string.IsNullOrEmpty(userinput))
                 {
-                    urls = urls.Substring(1);
+                    Console.WriteLine("Error input can not be empty");
+                    Thread.Sleep(-1);
+                    
                 }
-                File.AppendAllText(_webhook, urls);
-                
-                Startloop();
-                
+                else 
+                {
+                    string urls = string.Join("\nhttp", userinput.Split("http"));
+
+                    if (urls.StartsWith("\n"))
+                    {
+                        urls = urls.Substring(1);
+                    }
+                    File.AppendAllText(_webhook, urls);
+
+                    Startloop();
+                }
                 #endregion
             }
             else
@@ -97,21 +103,21 @@ namespace BoothWatcher
             {
                 BoothItem? item = _items.Dequeue();
                 List<DiscordMessageEmbed> embeds = new();
-                if (!File.ReadAllText(_blacklist).Contains(item.shopUrl) && item.thumbnailImageUrls.Count > 0)
+                if (!File.ReadAllText(_blacklist).Contains(item.ShopUrl) && item.thumbnailImageUrls.Count > 0)
                 {
-                    embeds.Add(new DiscordMessageEmbed(item.title, color: 16711807,
-                        author: new DiscordMessageEmbedAuthor(item.shopName, item.shopUrl, item.shopImageUrl),
-                        url: $"https://booth.pm/en/items/{item.id}",
+                    embeds.Add(new DiscordMessageEmbed(item.Title, color: 16711807,
+                        author: new DiscordMessageEmbedAuthor(item.ShopName, item.ShopUrl, item.ShopImageUrl),
+                        url: $"https://booth.pm/en/items/{item.Id}",
                         fields: new[]
                         {
-                            new DiscordMessageEmbedField("Price:", item.price),
-                            new DiscordMessageEmbedField("Booth ID:", item.id),
-                            new DiscordMessageEmbedField("Translated Title: ", TranslateText(item.title))
+                            new DiscordMessageEmbedField("Price:", item.Price),
+                            new DiscordMessageEmbedField("Booth ID:", item.Id),
+                            new DiscordMessageEmbedField("Translated Title: ", TranslateText(item.Title))
                         },
                         image: new DiscordMessageEmbedImage(item.thumbnailImageUrls[0]),
                         footer: new DiscordMessageEmbedFooter(_footerText, _footerIconAvatar)));
                     for (int i = 1; i < 4 && i < item.thumbnailImageUrls.Count; i++)
-                        embeds.Add(new DiscordMessageEmbed(url: $"https://booth.pm/en/items/{item.id}", image: new DiscordMessageEmbedImage(item.thumbnailImageUrls[i])));
+                        embeds.Add(new DiscordMessageEmbed(url: $"https://booth.pm/en/items/{item.Id}", image: new DiscordMessageEmbedImage(item.thumbnailImageUrls[i])));
                 }
                 DiscordMessage? message = new(username: _username, avatarUrl: _avatarUrl, tts: _tts, embeds: embeds.ToArray());
                 _clients.ForEach(client =>
@@ -121,8 +127,8 @@ namespace BoothWatcher
                     Thread.Sleep(1000);
                     client.SendToDiscord(message);
                 });
-                if (!File.ReadAllText(_blacklist).Contains(item.shopUrl))
-                    Console.WriteLine($"{item.title} Has been Sent!");
+                if (!File.ReadAllText(_blacklist).Contains(item.ShopUrl))
+                    Console.WriteLine($"{item.Title} Has been Sent!");
             }
         }
 
@@ -140,12 +146,12 @@ namespace BoothWatcher
                 List<BoothItem>? boothitems = await _watcher.GetNewBoothItemAsync();
                 foreach (var item in boothitems)
                 {
-                    if (!_alreadyAddedId.Contains(item.id))
+                    if (!_alreadyAddedId.Contains(item.Id))
                     {
-                        File.AppendAllText(_alreadyadded, item.id + Environment.NewLine);
-                        _alreadyAddedId.Add(item.id);
+                        File.AppendAllText(_alreadyadded, item.Id + Environment.NewLine);
+                        _alreadyAddedId.Add(item.Id);
                         _items.Enqueue(item);
-                        if (!File.ReadAllText(_blacklist).Contains(item.shopUrl))
+                        if (!File.ReadAllText(_blacklist).Contains(item.ShopUrl))
                         {
                             newitemscount++;
                         }
@@ -182,11 +188,11 @@ namespace BoothWatcher
 
         private static void CheckWatchList(BoothItem item)
         {
-            if (File.ReadAllText(_watchlist).Contains(item.shopUrl))
+            if (File.ReadAllText(_watchlist).Contains(item.ShopUrl))
             {
                 _clients.ForEach(client =>
                 { 
-                    DiscordMessage? watchlistitem = new($":arrow_down:  Post by author is on watchlist  :arrow_down: // <{item.shopUrl}>", username: _username, avatarUrl: _avatarUrl, tts: _tts);
+                    DiscordMessage? watchlistitem = new($":arrow_down:  Post by author is on watchlist  :arrow_down: // <{item.ShopUrl}>", username: _username, avatarUrl: _avatarUrl, tts: _tts);
                     client.SendToDiscord(watchlistitem);
                 });
             }
