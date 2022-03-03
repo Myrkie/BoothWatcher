@@ -15,7 +15,6 @@ namespace BoothWatcher
         public string Price = "";
         public string Title = "";
         public string Id = "";
-        public string TranslatedTitle = "";
 
         public override string ToString()
         {
