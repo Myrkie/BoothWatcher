@@ -84,23 +84,11 @@ namespace BoothWatcher
 
         private static void Startloop()
         {
-            Console.WriteLine("Starting With: " + CountLinesInTextFile(_webhook) + " Webhook Connections");
+            Console.WriteLine("Starting With: " + File.ReadAllLines(_webhook).Length + " Webhook Connections");
             foreach (string webhook in File.ReadAllLines(_webhook))
             {
                 _clients.Add(new DiscordWebhookClient(webhook));
             }
-        }
-
-        static int CountLinesInTextFile(string f)
-        {
-            var count = 0;
-            using StreamReader r = new StreamReader(f);
-            while (r.ReadLine() != null)
-            {
-                count++;
-            }
-
-            return count;
         }
 
         private static void DiscordWebhook_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
