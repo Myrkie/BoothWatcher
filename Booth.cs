@@ -1,8 +1,10 @@
-﻿namespace BoothWatcher
+﻿using DeeplTranslator = Deepl.Deepl;
+using Language = Deepl.Deepl.Language;
+namespace BoothWatcher
 {
     public class Booth
     {
-        private static HttpClient client { get; set; }
+        private static HttpClient? client { get; set; }
         public Booth()
         {
             HttpClientHandler handler = new HttpClientHandler
@@ -13,13 +15,19 @@
             client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.80 Safari/537.36 Edg/98.0.1108.50");
             client.DefaultRequestHeaders.Add("cookie", "adult=t");
         }
-
+        private static string TranslateText(string input)
+        {
+            var translate = new DeeplTranslator(selectedLanguage: Language.JP, targetLanguage: Language.EN, input);
+            if (string.IsNullOrEmpty(translate.Resp)) return "Failed To translate";
+            return translate.Resp;
+        }
         //this is going to hurt a lot of people lol but I'm lazy
         //tbh it works, Ill look into learning HTML Agility pack later
         // TODO Possibly change the below async task to use HTML Agility instead of String Split
         public async Task<List<BoothItem>> GetNewBoothItemAsync()
         {
             List<BoothItem> items = new();
+            if(client is null) throw new ArgumentNullException("client is null");
             HttpResponseMessage? response = await client.GetAsync("https://booth.pm/en/browse/3D%20Models?adult=include&sort=new");
             try
             {
@@ -38,7 +46,10 @@
                         if (line.Contains("data-original"))
                             item.thumbnailImageUrls.Add(line.Split("data-original=\"", StringSplitOptions.None)[1].Split('"')[0]);
                         if (line.Contains("item-card__title-anchor--multiline nav"))
+                        {
                             item.Title = line.Split("item-card__title-anchor--multiline nav\"", StringSplitOptions.None)[1].Split('>')[1];
+                            item.TranslatedTitle = TranslateText(item.Title);
+                        }
                         if (line.Contains("price u-text-primary u-text-left u-tpg-caption2\">"))
                             item.Price = line.Split("price u-text-primary u-text-left u-tpg-caption2\">", StringSplitOptions.None)[1];
                         if (line.Contains("class=\"item-card__shop-name\">"))

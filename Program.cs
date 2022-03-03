@@ -1,6 +1,5 @@
 ﻿using JNogueira.Discord.Webhook.Client;
-using DeeplTranslator = Deepl.Deepl; 
-using Language = Deepl.Deepl.Language;
+
 
 
 namespace BoothWatcher
@@ -112,7 +111,7 @@ namespace BoothWatcher
                         {
                             new DiscordMessageEmbedField("Price:", item.Price),
                             new DiscordMessageEmbedField("Booth ID:", item.Id),
-                            new DiscordMessageEmbedField("Translated Title: ", TranslateText(item.Title))
+                            new DiscordMessageEmbedField("Translated Title: ", item.Title)
                         },
                         image: new DiscordMessageEmbedImage(item.thumbnailImageUrls[0]),
                         footer: new DiscordMessageEmbedFooter(_footerText, _footerIconAvatar)));
@@ -132,12 +131,7 @@ namespace BoothWatcher
             }
         }
 
-        private static string TranslateText(string input)
-        {
-            var translate = new DeeplTranslator(selectedLanguage: Language.JP, targetLanguage: Language.EN, input);
-            if (string.IsNullOrEmpty(translate.Resp)) return "Failed To translate";
-            return translate.Resp;
-        }
+        
 
         private static async void BoothWatcher_Elapsed(object? sender = null, System.Timers.ElapsedEventArgs? e = null)
         {

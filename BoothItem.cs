@@ -8,20 +8,15 @@ namespace BoothWatcher
 {
     public class BoothItem
     {
-        public string Id { get => id; set => id = value; }
-        public string Title { get => title; set => title = value; }
-        public string Price { get => price; set => price = value; }
         public List<string> thumbnailImageUrls = new List<string>();
+        public string ShopImageUrl = "";
+        public string ShopUrl = "";
+        public string ShopName = "";
+        public string Price = "";
+        public string Title = "";
+        public string Id = "";
+        public string TranslatedTitle = "";
 
-        public string ShopName { get => shopName; set => shopName = value; }
-        public string ShopUrl { get => shopUrl; set => shopUrl = value; }
-        public string ShopImageUrl { get => shopImageUrl; set => shopImageUrl = value; }
-        private string shopImageUrl = "";
-        private string shopUrl = "";
-        private string shopName = "";
-        private string price = "";
-        private string title = "";
-        private string id = "";
         public override string ToString()
         {
             StringBuilder sb = new StringBuilder();
