@@ -119,6 +119,7 @@ namespace BoothWatcher
                         url: $"https://booth.pm/en/items/{item.Id}",
                         fields: new[]
                         {
+                            new DiscordMessageEmbedField("ScrapeTime: ", $"<t:{DateTimeOffset.Now.ToUnixTimeSeconds()}>"),
                             new DiscordMessageEmbedField("Price:", item.Price),
                             new DiscordMessageEmbedField("Booth ID:", item.Id),
                             new DiscordMessageEmbedField("Translated Title: ", TranslateText(item.Title))
