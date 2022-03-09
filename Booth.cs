@@ -38,9 +38,7 @@
                         if (line.Contains("data-original"))
                             item.thumbnailImageUrls.Add(line.Split("data-original=\"", StringSplitOptions.None)[1].Split('"')[0]);
                         if (line.Contains("item-card__title-anchor--multiline nav"))
-                        {
                             item.Title = line.Split("item-card__title-anchor--multiline nav\"", StringSplitOptions.None)[1].Split('>')[1];
-                        }
                         if (line.Contains("price u-text-primary u-text-left u-tpg-caption2\">"))
                             item.Price = line.Split("price u-text-primary u-text-left u-tpg-caption2\">", StringSplitOptions.None)[1];
                         if (line.Contains("class=\"item-card__shop-name\">"))

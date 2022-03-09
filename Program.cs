@@ -1,4 +1,5 @@
-﻿using JNogueira.Discord.Webhook.Client;
+﻿using System.Net;
+using JNogueira.Discord.Webhook.Client;
 using DeeplTranslator = Deepl.Deepl;
 using Language = Deepl.Deepl.Language;
 
@@ -24,12 +25,14 @@ namespace BoothWatcher
         private static string _watchlist = "WatchList.txt";
         private static string _blacklist = "BlackList.txt";
         private static string _alreadyadded = "AlreadyAddedId.txt";
+        internal static readonly string _proxiefile = "Proxies.txt";
         private static bool _tts = false;
         
         #endregion
 
         static void Main(string[] args)
         {
+            if (!File.Exists(_proxiefile)) Proxyhandler.DownloadFreeProxies();
             if (!File.Exists(_watchlist)) File.Create(_watchlist);
             if (!File.Exists(_blacklist)) File.Create(_blacklist);
             if (File.Exists(_alreadyadded))
@@ -77,9 +80,16 @@ namespace BoothWatcher
                 AutoReset = true,
                 Enabled = true
             };
+            System.Timers.Timer proxyrotation = new(60 * 60 * 1000)
+            {
+                AutoReset = true,
+                Enabled = true
+            };
             
             boothWatcherTimer.Elapsed += BoothWatcher_Elapsed;
             discordWebhook.Elapsed += DiscordWebhook_Elapsed;
+            proxyrotation.Elapsed += Proxyhandler.ResetProxies;
+            proxyrotation.Start();
             boothWatcherTimer.Start();
             discordWebhook.Start();
             
@@ -182,8 +192,8 @@ namespace BoothWatcher
         }
         private static string TranslateText(string input)
         {
-            var translate = new DeeplTranslator(selectedLanguage: Language.JP, targetLanguage: Language.EN, input);
-            if (string.IsNullOrEmpty(translate.Resp)) return "Failed To translate";
+            var translate = new DeeplTranslator(selectedLanguage: Language.JP, targetLanguage: Language.EN, input, Proxyhandler.Randomprox(), new NetworkCredential("nfbnwiiu", "oa2ev6ilh71n"));
+            if (string.IsNullOrEmpty(translate.Resp)) return $"{input} \nThis Failed To translate";
             return translate.Resp;
         }
 
