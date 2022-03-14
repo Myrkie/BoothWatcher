@@ -8,7 +8,7 @@ namespace BoothWatcher
 {
     public class BoothItem
     {
-        public List<string> thumbnailImageUrls = new();
+        public List<string> thumbnailImageUrls = new List<string>();
         public string ShopImageUrl = "";
         public string ShopUrl = "";
         public string ShopName = "";
