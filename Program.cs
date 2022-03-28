@@ -21,21 +21,23 @@ namespace BoothWatcher
             bool isEmpty = IsEmpty(JsonConfig._config._webhook);
             if (isEmpty)
             {
-                Console.WriteLine("Paste in your webhook URL here");
+                Console.WriteLine("Paste in your webhook URLs here");
 
                 #region URLParse
-                string? userinput = Console.ReadLine();
-                if (string.IsNullOrEmpty(userinput))
+                bool doLoop = true;
+                while (doLoop)
                 {
-                    Console.WriteLine("Error input can not be empty");
-                    Thread.Sleep(-1);
-                    
-                }
-                else 
-                {
-                    JsonConfig._config._webhook.Add(userinput);
-                    JsonConfig.Configure.forcesave();
-                    Startloop();
+                    string userinput = Console.ReadLine();
+                    if (string.IsNullOrEmpty(userinput))
+                    {
+                        doLoop = false;
+                    }
+                    else
+                    {
+                        JsonConfig._config._webhook.Add(userinput);
+                        JsonConfig.Configure.forcesave();
+                        Console.WriteLine("Added, leave blank to finish");
+                    }
                 }
                 #endregion
             }
