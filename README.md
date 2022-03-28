@@ -4,16 +4,56 @@ Get notified of new booth models using discord webhooks in c#
 ## Features ##
 * Built with .net 6 for multi platform support.
 * Support for multiple webhooks.
-* Author post notification
-* Author Blacklist
+* Author post notification.
+* Author Blacklist.
 
 ## How to use ###
-> Initial setup: Download from releases or build your own, paste in your webhooks into console and auto posting will begin. 
+> Initial setup: Download from releases or build your own, paste in your webhook into console and auto posting will begin. 
 
-> Author Post Notification: Add the url to your chosen author to WatchList.txt one link per line to get notified whenever they post.
+> Author Post Notification: get notified of new posts by chosen author, requires you to format in Json.
 
-> BlackList: Add the url to your chosen author to BlackList.txt one link per line to ignore all posts by author.
+> BlackList: blacklist any author you don't want to be notified of, requires you to format in Json.
 
+
+## Requirements ##
+* no requirements needed to run.
+* .net 6 required to compile.
+
+# example config #
+```json
+{
+  "Embed FooterText": "Made by Keafy & Myrkur",
+  "Startup Message": "Starting Up",
+  "WebHook Override name": "BoothWatcher - V2.0.0.0",
+  "Avatar Icon": "https://i.imgur.com/gEJk8uX.jpg",
+  "Embed Footer Icon": "https://i.imgur.com/gEJk8uX.jpg",
+  "Webhooks": [
+    "https://discord.com/api/webhooks/958089154175053884/KZh0vLk4UurhxNwH5x4aLV8Ob5s8_uC7jFoFa852SO2a_p2DRJFrOTyCs7-OLjWm001I",
+    "https://discord.com/api/webhooks/958089154175053884/KZh0vLk4UurhxNwH5x4aLV8Ob5s8_uC7jFoFa852SO2a_p2DRJFrOTyCs7-OLjWm001I"
+  ],
+  "Watchlist": [
+    "https://ponderogen.booth.pm/",
+    "https://keiichiisozaki.booth.pm/"
+  ],
+  "Blacklist": [
+    "https://aemeth.booth.pm/",
+    "https://akanienne.booth.pm/",
+    "https://aleasevr.booth.pm/",
+    "https://apyr.booth.pm/",
+    "https://aqtie.booth.pm/"
+  ],
+  "Already Posted list": "AlreadyAddedId.txt",
+  "_tts": false
+}
+```
+
+# example of operation #
+
+![Operation](GitImages/Operation.png)
+
+
+# example author post notification #
+![Notification](GitImages/PostNotification.png)
 
 External Libraries used:
 - [DeepL-API](https://github.com/Stupeflip/Deepl) - Simple DeepL

@@ -5,9 +5,9 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyVersion>2.0</AssemblyVersion>
-    <FileVersion>2.0</FileVersion>
-    <PackageVersion>1.9.0</PackageVersion>
+    <AssemblyVersion>2.1</AssemblyVersion>
+    <FileVersion>2.1</FileVersion>
+    <PackageVersion>2.1.0</PackageVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,6 +23,10 @@
     <Reference Include="Deepl, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null">
       <HintPath>Dependancies\Deepl.dll</HintPath>
     </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="GitImages" />
   </ItemGroup>
 
 </Project>

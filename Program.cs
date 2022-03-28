@@ -11,34 +11,17 @@ namespace BoothWatcher
         static List<DiscordWebhookClient> _clients = new();
         static HashSet<string> _alreadyAddedId = new();
         private static bool _firstartup = true;
-        
-        // TODO make every Static in the region below into a json config
-        #region Static Properties
-        
-        private static string _startupMessage = "Starting Up";
-        private static string _username = $"BoothWatcher - V{typeof(Program).Assembly.GetName().Version}";
-        private static string _avatarUrl = "https://i.imgur.com/gEJk8uX.jpg";
-        private static string _footerIconAvatar = "https://i.imgur.com/gEJk8uX.jpg";
-        private static readonly string _footerText = "Made by Keafy & Myrkur";
-        private static string _webhook = "Webhooks.txt";
-        private static string _watchlist = "WatchList.txt";
-        private static string _blacklist = "BlackList.txt";
-        private static string _alreadyadded = "AlreadyAddedId.txt";
-        private static bool _tts = false;
-        
-        #endregion
 
         static void Main(string[] args)
         {
-            if (!File.Exists(_watchlist)) File.Create(_watchlist);
-            if (!File.Exists(_blacklist)) File.Create(_blacklist);
-            if (File.Exists(_alreadyadded))
-                foreach (string id in File.ReadAllLines(_alreadyadded))
+            JsonConfig.Configure.load();
+            if (File.Exists(JsonConfig._config._alreadyadded))
+                foreach (string id in File.ReadAllLines(JsonConfig._config._alreadyadded))
                     _alreadyAddedId.Add(id);
-            if (!File.Exists(_webhook))
+            bool isEmpty = IsEmpty(JsonConfig._config._webhook);
+            if (isEmpty)
             {
-                using (FileStream fs = File.Create(_webhook))
-                    Console.WriteLine("Paste in your webhook URL'(s) here");
+                Console.WriteLine("Paste in your webhook URL here");
 
                 #region URLParse
                 string? userinput = Console.ReadLine();
@@ -50,14 +33,8 @@ namespace BoothWatcher
                 }
                 else 
                 {
-                    string urls = string.Join("\nhttp", userinput.Split("http"));
-
-                    if (urls.StartsWith("\n"))
-                    {
-                        urls = urls.Substring(1);
-                    }
-                    File.AppendAllText(_webhook, urls);
-
+                    JsonConfig._config._webhook.Add(userinput);
+                    JsonConfig.Configure.forcesave();
                     Startloop();
                 }
                 #endregion
@@ -89,8 +66,8 @@ namespace BoothWatcher
 
         private static void Startloop()
         {
-            Console.WriteLine("Starting With: " + File.ReadAllLines(_webhook).Length + " Webhook Connections");
-            foreach (string webhook in File.ReadAllLines(_webhook))
+            Console.WriteLine("Starting With: " + JsonConfig._config._webhook.Count + " Webhook Connections");
+            foreach (string webhook in JsonConfig._config._webhook)
             {
                 _clients.Add(new DiscordWebhookClient(webhook));
             }
@@ -102,7 +79,7 @@ namespace BoothWatcher
             {
                 BoothItem? item = _items.Dequeue();
                 List<DiscordMessageEmbed> embeds = new();
-                if (!File.ReadAllText(_blacklist).Contains(item.ShopUrl) && item.thumbnailImageUrls.Count > 0)
+                if (!JsonConfig._config._blacklist.Contains(item.ShopUrl) && item.thumbnailImageUrls.Count > 0)
                 {
                     embeds.Add(new DiscordMessageEmbed(item.Title, color: 16711807,
                         author: new DiscordMessageEmbedAuthor(item.ShopName, item.ShopUrl, item.ShopImageUrl),
@@ -115,11 +92,11 @@ namespace BoothWatcher
                             new DiscordMessageEmbedField("Translated Title: ", TranslateText(item.Title))
                         },
                         image: new DiscordMessageEmbedImage(item.thumbnailImageUrls[0]),
-                        footer: new DiscordMessageEmbedFooter(_footerText, _footerIconAvatar)));
+                        footer: new DiscordMessageEmbedFooter(JsonConfig._config._footerText, JsonConfig._config._footerIconAvatar)));
                     for (int i = 1; i < 4 && i < item.thumbnailImageUrls.Count; i++)
                         embeds.Add(new DiscordMessageEmbed(url: $"https://booth.pm/en/items/{item.Id}", image: new DiscordMessageEmbedImage(item.thumbnailImageUrls[i])));
                 }
-                DiscordMessage? message = new(username: _username, avatarUrl: _avatarUrl, tts: _tts, embeds: embeds.ToArray());
+                DiscordMessage? message = new(username: JsonConfig._config._username, avatarUrl: JsonConfig._config._avatarUrl, tts: JsonConfig._config._tts, embeds: embeds.ToArray());
                 _clients.ForEach(client =>
                 {
                     StartupCheck();
@@ -127,7 +104,7 @@ namespace BoothWatcher
                     Thread.Sleep(1000);
                     client.SendToDiscord(message);
                 });
-                if (!File.ReadAllText(_blacklist).Contains(item.ShopUrl))
+                if (!JsonConfig._config._blacklist.Contains(item.ShopUrl))
                     Console.WriteLine($"{item.Title} Has been Sent!");
             }
         }
@@ -144,10 +121,10 @@ namespace BoothWatcher
                 {
                     if (!_alreadyAddedId.Contains(item.Id))
                     {
-                        File.AppendAllText(_alreadyadded, item.Id + Environment.NewLine);
+                        File.AppendAllText(JsonConfig._config._alreadyadded, item.Id + Environment.NewLine);
                         _alreadyAddedId.Add(item.Id);
                         _items.Enqueue(item);
-                        if (!File.ReadAllText(_blacklist).Contains(item.ShopUrl))
+                        if (!JsonConfig._config._blacklist.Contains(item.ShopUrl))
                         {
                             newitemscount++;
                         }
@@ -175,7 +152,7 @@ namespace BoothWatcher
                 _firstartup = false;
                 _clients.ForEach(client =>
                 {
-                    DiscordMessage? init = new(_startupMessage, username: _username, avatarUrl: _avatarUrl, tts: _tts);
+                    DiscordMessage? init = new(JsonConfig._config._startupMessage, username: JsonConfig._config._username, avatarUrl: JsonConfig._config._avatarUrl, tts: JsonConfig._config._tts);
                     client.SendToDiscord(init);
                     Thread.Sleep(4000);
                 });
@@ -187,14 +164,23 @@ namespace BoothWatcher
             if (string.IsNullOrEmpty(translate.Resp)) return $"{input} \nThis Failed To translate";
             return translate.Resp;
         }
+        
+        public static bool IsEmpty<T>(List<T> list)
+        {
+            if (list == null) {
+                return true;
+            }
+ 
+            return !list.Any();
+        }
 
         private static void CheckWatchList(BoothItem item)
         {
-            if (File.ReadAllText(_watchlist).Contains(item.ShopUrl))
+            if (JsonConfig._config._watchlist.Contains(item.ShopUrl))
             {
                 _clients.ForEach(client =>
                 { 
-                    DiscordMessage? watchlistitem = new($":arrow_down:  Post by author is on watchlist  :arrow_down: // <{item.ShopUrl}>", username: _username, avatarUrl: _avatarUrl, tts: _tts);
+                    DiscordMessage? watchlistitem = new($":arrow_down:  Post by author is on watchlist  :arrow_down: // <{item.ShopUrl}>", username: JsonConfig._config._username, avatarUrl: JsonConfig._config._avatarUrl, tts: JsonConfig._config._tts);
                     client.SendToDiscord(watchlistitem);
                 });
             }
