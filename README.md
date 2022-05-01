@@ -56,4 +56,4 @@ Get notified of new booth models using discord webhooks in c#
 ![Notification](GitImages/PostNotification.png)
 
 External Libraries used:
-- [DeepL-API](https://github.com/Stupeflip/Deepl) - Simple DeepL
+- [DeepL-API](https://github.com/Myrkie/Deepl) - Simple DeepL
