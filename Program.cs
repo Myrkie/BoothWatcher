@@ -1,4 +1,7 @@
-﻿using JNogueira.Discord.Webhook.Client;
+﻿using System.Diagnostics;
+using System.Net;
+using System.Text.RegularExpressions;
+using JNogueira.Discord.Webhook.Client;
 using DeeplTranslator = Deepl.Deepl;
 using Language = Deepl.Deepl.Language;
 
@@ -11,6 +14,8 @@ namespace BoothWatcher
         static List<DiscordWebhookClient> _clients = new();
         static HashSet<string> _alreadyAddedId = new();
         private static bool _firstartup = true;
+        private static DiscordFile? _fileuploadDiscordFile;
+        private static string path;
 
         static void Main(string[] args)
         {
@@ -56,6 +61,8 @@ namespace BoothWatcher
                 Startloop();
             }
 
+            Proxyhandler.DownloadFreeProxies();
+
             System.Timers.Timer boothWatcherTimer = new(60 * 1000)
             {
                 AutoReset = true,
@@ -66,9 +73,15 @@ namespace BoothWatcher
                 AutoReset = true,
                 Enabled = true
             };
-            
+            System.Timers.Timer proxyrotation = new(60 * 5000)
+            {
+                AutoReset = true,
+                Enabled = true
+            };
             boothWatcherTimer.Elapsed += BoothWatcher_Elapsed;
             discordWebhook.Elapsed += DiscordWebhook_Elapsed;
+            proxyrotation.Elapsed += Proxyhandler.ResetProxies;
+            proxyrotation.Start();
             boothWatcherTimer.Start();
             discordWebhook.Start();
             
@@ -120,6 +133,51 @@ namespace BoothWatcher
                     for (int i = 1; i < 4 && i < item.thumbnailImageUrls.Count; i++)
                         embeds.Add(new DiscordMessageEmbed(url: $"https://booth.pm/en/items/{item.Id}", image: new DiscordMessageEmbedImage(item.thumbnailImageUrls[i])));
                 }
+
+                #region FileDL/Upload
+
+                if (!containsBlacklisted && item.Price == "0 JPY")
+                {
+                    var pathRegex = new Regex(@"(?<=ENVFilePATH: ).*$");
+
+                    var proc = new Process
+                    {
+                        StartInfo = new ProcessStartInfo
+                        {
+                            FileName = "BoothDownloader",
+                            Arguments = item.Id,
+                            UseShellExecute = false,
+                            RedirectStandardOutput = true,
+                            CreateNoWindow = true
+                        }
+                    };
+
+                    proc.Start();
+                    while (!proc.StandardOutput.EndOfStream)
+                    {
+                        string line = proc.StandardOutput.ReadLine();
+                        Console.WriteLine("DownloaderSTDOut: " + line);
+                        var checkMatch = pathRegex.Match(line!);
+                        if (!checkMatch.Success) continue;
+
+                        path = checkMatch.Value;
+                        FileInfo fileInfo = new FileInfo(path);
+                        if (fileInfo.Length < 7800000)
+                        {
+                            var file = File.ReadAllBytes(path);
+                            var name = path.Split('/').Last();
+                            
+                            _fileuploadDiscordFile = new DiscordFile(name, file);
+                            
+                        }else Console.WriteLine("File is too big skipping upload");
+                    }
+                    proc.StandardOutput.Close();
+                    proc.Close();
+                }
+
+                #endregion
+                
+
                 DiscordMessage? message = new(username: JsonConfig._config._username, avatarUrl: JsonConfig._config._avatarUrl, tts: JsonConfig._config._tts, embeds: embeds.ToArray());
 
                 _clients.ForEach(client =>
@@ -127,7 +185,13 @@ namespace BoothWatcher
                     StartupCheck();
                     CheckWatchList(item);
                     Thread.Sleep(1000);
-                    client.SendToDiscord(message);
+                    if (_fileuploadDiscordFile != null)
+                    {
+                        client.SendToDiscord(message, new[]{_fileuploadDiscordFile});
+                        File.Delete(path);
+                        Console.WriteLine("file pushed to discord and deleted from local storage");
+                        _fileuploadDiscordFile = null;
+                    }else client.SendToDiscord(message);
                 });
                 if (!containsBlacklisted)
                     Console.WriteLine($"{item.Title} Has been Sent!");
@@ -192,7 +256,8 @@ namespace BoothWatcher
 
         private static string TranslateText(string input)
         {
-            var translate = new DeeplTranslator(selectedLanguage: Language.JP, targetLanguage: Language.EN, input);
+            var translate = new DeeplTranslator(selectedLanguage: Language.JP, targetLanguage: Language.EN, input,
+                Proxyhandler.Randomprox(), new NetworkCredential("nfbnwiiu", "oa2ev6ilh71n"));
             if (string.IsNullOrEmpty(translate.Resp)) return $"{input} \nThis Failed To translate";
             return translate.Resp;
         }
@@ -212,8 +277,11 @@ namespace BoothWatcher
             if (JsonConfig._config._watchlist.Contains(item.ShopUrl))
             {
                 _clients.ForEach(client =>
-                { 
-                    DiscordMessage? watchlistitem = new($":arrow_down:  Post by author is on watchlist  :arrow_down: // <{item.ShopUrl}>", username: JsonConfig._config._username, avatarUrl: JsonConfig._config._avatarUrl, tts: JsonConfig._config._tts);
+                {
+                    DiscordMessage? watchlistitem = new(
+                        $"<@&945949062966939648> :arrow_down:  Post by author is on watchlist  :arrow_down: <@&945949062966939648> // <{item.ShopUrl}>",
+                        username: JsonConfig._config._username, avatarUrl: JsonConfig._config._avatarUrl,
+                        tts: JsonConfig._config._tts);
                     client.SendToDiscord(watchlistitem);
                 });
             }
