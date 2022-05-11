@@ -47,6 +47,10 @@ Get notified of new booth models using discord webhooks in c#
     "vroid"
   ],
   "Already Posted list": "AlreadyAddedId.txt",
+  "Proxy Username": "proxy-username",
+  "Proxy Password": "proxy-password",
+  "Proxy Host": "proxy-host",
+
   "_tts": false
 }
 ```

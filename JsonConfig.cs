@@ -29,6 +29,12 @@ namespace BoothWatcher
             public List<string> _keywordblacklist { get; set; } = new();
             [JsonProperty("Already Posted list")]
             public string _alreadyadded { get; set; } = "AlreadyAddedId.txt";
+            [JsonProperty("Proxy Username")]
+            public string _proxyUsername { get; set; } = "";
+            [JsonProperty("Proxy Password")]
+            public string _proxyPassword { get; set; } = "";
+            [JsonProperty("Proxy Host")]
+            public string _proxyHost { get; set; } = "";
             
             public bool _tts { get; set; } = false;
         }

@@ -1,4 +1,5 @@
-﻿using JNogueira.Discord.Webhook.Client;
+﻿using System.Net;
+using JNogueira.Discord.Webhook.Client;
 using DeeplTranslator = Deepl.Deepl;
 using Language = Deepl.Deepl.Language;
 
@@ -10,6 +11,7 @@ namespace BoothWatcher
         static Queue<BoothItem> _items = new();
         static List<DiscordWebhookClient> _clients = new();
         static HashSet<string> _alreadyAddedId = new();
+        private static DeeplTranslator translate;
         private static bool _firstartup = true;
 
         static void Main(string[] args)
@@ -66,6 +68,20 @@ namespace BoothWatcher
                 AutoReset = true,
                 Enabled = true
             };
+
+            if (!string.IsNullOrWhiteSpace(JsonConfig._config._proxyHost))
+            {
+                Proxyhandler.DownloadFreeProxies();
+                
+                System.Timers.Timer proxyrotation = new(60 * 5000)
+                {
+                    AutoReset = true,
+                    Enabled = true
+                };
+                
+                proxyrotation.Elapsed += Proxyhandler.ResetProxies;
+                proxyrotation.Start();
+            }
             
             boothWatcherTimer.Elapsed += BoothWatcher_Elapsed;
             discordWebhook.Elapsed += DiscordWebhook_Elapsed;
@@ -192,9 +208,8 @@ namespace BoothWatcher
 
         private static string TranslateText(string input)
         {
-            var translate = new DeeplTranslator(selectedLanguage: Language.JP, targetLanguage: Language.EN, input);
-            if (string.IsNullOrEmpty(translate.Resp)) return $"{input} \nThis Failed To translate";
-            return translate.Resp;
+            translate = !string.IsNullOrWhiteSpace(JsonConfig._config._proxyHost) ? new DeeplTranslator(selectedLanguage: Language.JP, targetLanguage: Language.EN, input, Proxyhandler.Randomprox(), new NetworkCredential(JsonConfig._config._proxyUsername, JsonConfig._config._proxyPassword)) : new DeeplTranslator(selectedLanguage: Language.JP, targetLanguage: Language.EN, input);
+            return string.IsNullOrEmpty(translate.Resp) ? $"{input} \nThis Failed To translate" : translate.Resp;
         }
 
         private static bool IsEmpty<T>(List<T> list)
