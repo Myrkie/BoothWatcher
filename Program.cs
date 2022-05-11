@@ -168,8 +168,9 @@ namespace BoothWatcher
                             var name = path.Split('/').Last();
                             
                             _fileuploadDiscordFile = new DiscordFile(name, file);
+                            Console.WriteLine("Uploading Filesize: " + ConvertBytesToMegabytes(fileInfo.Length) + "MB");
                             
-                        }else Console.WriteLine("File is too big skipping upload");
+                        }else Console.WriteLine("File is too big skipping upload: " + ConvertBytesToMegabytes(fileInfo.Length) + "MB");
                     }
                     proc.StandardOutput.Close();
                     proc.Close();
@@ -261,7 +262,13 @@ namespace BoothWatcher
             if (string.IsNullOrEmpty(translate.Resp)) return $"{input} \nThis Failed To translate";
             return translate.Resp;
         }
-
+        
+        // convert byte to megabyte and round to 2 decimal places
+        private static double ConvertBytesToMegabytes(long bytes)
+        {
+            return Math.Round((bytes / 1024f) / 1024f, 2);
+        }
+        
         private static bool IsEmpty<T>(List<T> list)
         {
             if (list == null)
