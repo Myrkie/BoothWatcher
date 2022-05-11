@@ -4,7 +4,7 @@ namespace BoothWatcher
 {
     public class JsonConfig
     {
-        private static string _configpath = "BWConfig.json";
+        public static string _configpath = "BWConfig.json";
         public static Config _config = new Config();
 
         public class Config
@@ -25,6 +25,8 @@ namespace BoothWatcher
             public List<string> _watchlist { get; set; } = new();
             [JsonProperty("Blacklist")]
             public List<string> _blacklist { get; set; } = new();
+            [JsonProperty("KeywordBlacklist")]
+            public List<string> _keywordblacklist { get; set; } = new();
             [JsonProperty("Already Posted list")]
             public string _alreadyadded { get; set; } = "AlreadyAddedId.txt";
             

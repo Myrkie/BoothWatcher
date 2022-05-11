@@ -14,6 +14,14 @@ namespace BoothWatcher
 
         static void Main(string[] args)
         {
+            Console.WriteLine("started file watcher");
+            using var fileSystemWatcher = new FileSystemWatcher();
+            fileSystemWatcher.NotifyFilter = NotifyFilters.LastWrite;
+            fileSystemWatcher.Path = Directory.GetCurrentDirectory();
+            fileSystemWatcher.Filter = JsonConfig._configpath;
+            fileSystemWatcher.Changed += OnChanged;
+            fileSystemWatcher.EnableRaisingEvents = true;
+
             JsonConfig.Configure.load();
             if (File.Exists(JsonConfig._config._alreadyadded))
                 foreach (string id in File.ReadAllLines(JsonConfig._config._alreadyadded))
@@ -24,6 +32,7 @@ namespace BoothWatcher
                 Console.WriteLine("Paste in your webhook URLs here");
 
                 #region URLParse
+
                 bool doLoop = true;
                 while (doLoop)
                 {
@@ -39,6 +48,7 @@ namespace BoothWatcher
                         Console.WriteLine("Added, leave blank to finish");
                     }
                 }
+
                 #endregion
             }
             else
@@ -66,6 +76,15 @@ namespace BoothWatcher
             Thread.Sleep(-1);
         }
 
+        private static void OnChanged(object sender, FileSystemEventArgs e)
+        {
+            if (e.ChangeType != WatcherChangeTypes.Changed) return;
+
+            Console.WriteLine("Config file changed, reloading");
+            Thread.Sleep(5000);
+            JsonConfig.Configure.load();
+        }
+
         private static void Startloop()
         {
             Console.WriteLine("Starting With: " + JsonConfig._config._webhook.Count + " Webhook Connections");
@@ -81,7 +100,10 @@ namespace BoothWatcher
             {
                 BoothItem? item = _items.Dequeue();
                 List<DiscordMessageEmbed> embeds = new();
-                if (!JsonConfig._config._blacklist.Contains(item.ShopUrl) && item.thumbnailImageUrls.Count > 0)
+
+                bool containsBlacklisted = JsonConfig._config._keywordblacklist.Any(item.Title.ToLower().Contains) ||
+                                            JsonConfig._config._blacklist.Contains(item.ShopUrl);
+                if (!containsBlacklisted && item.thumbnailImageUrls.Count > 0)
                 {
                     embeds.Add(new DiscordMessageEmbed(item.Title, color: 16711807,
                         author: new DiscordMessageEmbedAuthor(item.ShopName, item.ShopUrl, item.ShopImageUrl),
@@ -99,6 +121,7 @@ namespace BoothWatcher
                         embeds.Add(new DiscordMessageEmbed(url: $"https://booth.pm/en/items/{item.Id}", image: new DiscordMessageEmbedImage(item.thumbnailImageUrls[i])));
                 }
                 DiscordMessage? message = new(username: JsonConfig._config._username, avatarUrl: JsonConfig._config._avatarUrl, tts: JsonConfig._config._tts, embeds: embeds.ToArray());
+
                 _clients.ForEach(client =>
                 {
                     StartupCheck();
@@ -106,12 +129,12 @@ namespace BoothWatcher
                     Thread.Sleep(1000);
                     client.SendToDiscord(message);
                 });
-                if (!JsonConfig._config._blacklist.Contains(item.ShopUrl))
+                if (!containsBlacklisted)
                     Console.WriteLine($"{item.Title} Has been Sent!");
             }
         }
 
-        
+
 
         private static async void BoothWatcher_Elapsed(object? sender = null, System.Timers.ElapsedEventArgs? e = null)
         {
@@ -126,7 +149,10 @@ namespace BoothWatcher
                         File.AppendAllText(JsonConfig._config._alreadyadded, item.Id + Environment.NewLine);
                         _alreadyAddedId.Add(item.Id);
                         _items.Enqueue(item);
-                        if (!JsonConfig._config._blacklist.Contains(item.ShopUrl))
+                        bool containsBlacklisted =
+                            (JsonConfig._config._keywordblacklist.Any(item.Title.ToLower().Contains) ||
+                             JsonConfig._config._blacklist.Contains(item.ShopUrl));
+                        if (!containsBlacklisted)
                         {
                             newitemscount++;
                         }
@@ -136,6 +162,7 @@ namespace BoothWatcher
                         }
                     }
                 }
+
                 if (newitemscount > 0)
                     Console.WriteLine($"Added {newitemscount} to queue");
                 else
@@ -154,25 +181,29 @@ namespace BoothWatcher
                 _firstartup = false;
                 _clients.ForEach(client =>
                 {
-                    DiscordMessage? init = new(JsonConfig._config._startupMessage, username: JsonConfig._config._username, avatarUrl: JsonConfig._config._avatarUrl, tts: JsonConfig._config._tts);
+                    DiscordMessage? init = new(JsonConfig._config._startupMessage,
+                        username: JsonConfig._config._username, avatarUrl: JsonConfig._config._avatarUrl,
+                        tts: JsonConfig._config._tts);
                     client.SendToDiscord(init);
                     Thread.Sleep(4000);
                 });
             }
         }
+
         private static string TranslateText(string input)
         {
             var translate = new DeeplTranslator(selectedLanguage: Language.JP, targetLanguage: Language.EN, input);
             if (string.IsNullOrEmpty(translate.Resp)) return $"{input} \nThis Failed To translate";
             return translate.Resp;
         }
-        
-        public static bool IsEmpty<T>(List<T> list)
+
+        private static bool IsEmpty<T>(List<T> list)
         {
-            if (list == null) {
+            if (list == null)
+            {
                 return true;
             }
- 
+
             return !list.Any();
         }
 
