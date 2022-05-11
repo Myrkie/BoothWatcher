@@ -42,6 +42,10 @@ Get notified of new booth models using discord webhooks in c#
     "https://apyr.booth.pm/",
     "https://aqtie.booth.pm/"
   ],
+  "KeywordBlacklist": [
+    "eye",
+    "vroid"
+  ],
   "Already Posted list": "AlreadyAddedId.txt",
   "_tts": false
 }
