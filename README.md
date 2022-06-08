@@ -19,6 +19,12 @@ Get notified of new booth models using discord webhooks in c#
 * no requirements needed to run.
 * .net 6 required to compile.
 
+
+## Auto Download ##
+> for auto downloading of free files to function you must have BoothDownloader placed in the same folder as BoothWatcher, follow instructions there for setup.
+> if you don't have it you can download it from [here](https://github.com/Myrkie/BoothDownloader)
+> it will NOT function if setup improperly.
+
 # example config #
 ```json
 {

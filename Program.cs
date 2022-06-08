@@ -1,4 +1,6 @@
-﻿using System.Net;
+﻿using System.Diagnostics;
+using System.Net;
+using System.Text.RegularExpressions;
 using JNogueira.Discord.Webhook.Client;
 using DeeplTranslator = Deepl.Deepl;
 using Language = Deepl.Deepl.Language;
@@ -13,6 +15,8 @@ namespace BoothWatcher
         static HashSet<string> _alreadyAddedId = new();
         private static DeeplTranslator translate;
         private static bool _firstartup = true;
+        private static DiscordFile? _fileuploadDiscordFile;
+        private static string path;
 
         static void Main(string[] args)
         {
@@ -137,6 +141,56 @@ namespace BoothWatcher
                     for (int i = 1; i < 4 && i < item.thumbnailImageUrls.Count; i++)
                         embeds.Add(new DiscordMessageEmbed(url: $"https://booth.pm/en/items/{item.Id}", image: new DiscordMessageEmbedImage(item.thumbnailImageUrls[i])));
                 }
+
+                #region FileDL/Upload
+                // this shit sucks and I don't know why it works but it does so fuck it until it breaks.
+                var boothdownloader = Directory.GetFiles(Directory.GetCurrentDirectory(),"BoothDownloader" + ".*");
+                if (boothdownloader.Length > 0)
+                {
+                    if (!containsBlacklisted && item.Price == "0 JPY")
+                    {
+                        var pathRegex = new Regex(@"(?<=ENVFilePATH: ).*$");
+
+                        var proc = new Process
+                        {
+                            StartInfo = new ProcessStartInfo
+                            {
+                                FileName = "BoothDownloader",
+                                Arguments = item.Id,
+                                UseShellExecute = false,
+                                RedirectStandardOutput = true,
+                                CreateNoWindow = true
+                            }
+                        };
+
+                        proc.Start();
+                        while (!proc.StandardOutput.EndOfStream)
+                        {
+                            string? line = proc.StandardOutput.ReadLine();
+                            Console.WriteLine("DownloaderSTDOut: " + line);
+                            var checkMatch = pathRegex.Match(line!);
+                            if (!checkMatch.Success) continue;
+
+                            path = checkMatch.Value;
+                            FileInfo fileInfo = new FileInfo(path);
+                            if (fileInfo.Length < 7800000)
+                            {
+                                var file = File.ReadAllBytes(path);
+                                var name = path.Split('/').Last();
+                            
+                                _fileuploadDiscordFile = new DiscordFile(name, file);
+                                Console.WriteLine("Uploading Filesize: " + ConvertBytesToMegabytes(fileInfo.Length) + "MB");
+                            
+                            }else Console.WriteLine("File is too big skipping upload: " + ConvertBytesToMegabytes(fileInfo.Length) + "MB");
+                        }
+                        proc.StandardOutput.Close();
+                        proc.Close();
+                    }
+                }else Console.WriteLine("BoothDownloader not found, ignoring download");
+
+                #endregion
+                
+
                 DiscordMessage? message = new(username: JsonConfig._config._username, avatarUrl: JsonConfig._config._avatarUrl, tts: JsonConfig._config._tts, embeds: embeds.ToArray());
 
                 _clients.ForEach(client =>
@@ -144,7 +198,13 @@ namespace BoothWatcher
                     StartupCheck();
                     CheckWatchList(item);
                     Thread.Sleep(1000);
-                    client.SendToDiscord(message);
+                    if (_fileuploadDiscordFile != null)
+                    {
+                        client.SendToDiscord(message, new[]{_fileuploadDiscordFile});
+                        File.Delete(path);
+                        Console.WriteLine("file pushed to discord and deleted from local storage");
+                        _fileuploadDiscordFile = null;
+                    }else client.SendToDiscord(message);
                 });
                 if (!containsBlacklisted)
                     Console.WriteLine($"{item.Title} Has been Sent!");
@@ -212,7 +272,13 @@ namespace BoothWatcher
             translate = !string.IsNullOrWhiteSpace(JsonConfig._config._proxyHost) ? new DeeplTranslator(selectedLanguage: Language.JP, targetLanguage: Language.EN, input, Proxyhandler.Randomprox(), new NetworkCredential(JsonConfig._config._proxyUsername, JsonConfig._config._proxyPassword)) : new DeeplTranslator(selectedLanguage: Language.JP, targetLanguage: Language.EN, input);
             return string.IsNullOrEmpty(translate.Resp) ? $"{input} \nThis Failed To translate" : translate.Resp;
         }
-
+        
+        // convert byte to megabyte and round to 2 decimal places
+        private static double ConvertBytesToMegabytes(long bytes)
+        {
+            return Math.Round((bytes / 1024f) / 1024f, 2);
+        }
+        
         private static bool IsEmpty<T>(List<T> list)
         {
             if (list == null)
