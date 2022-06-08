@@ -7,7 +7,7 @@ using Language = Deepl.Deepl.Language;
 
 namespace BoothWatcher
 {
-    internal class Program
+    internal class BoothWatcher
     {
         static Booth _watcher = new();
         static Queue<BoothItem> _items = new();
@@ -20,7 +20,7 @@ namespace BoothWatcher
 
         static void Main(string[] args)
         {
-            Console.WriteLine("started file watcher");
+            Console.Title = $"BoothWatcher - V{typeof(BoothWatcher).Assembly.GetName().Version}";
             using var fileSystemWatcher = new FileSystemWatcher();
             fileSystemWatcher.NotifyFilter = NotifyFilters.LastWrite;
             fileSystemWatcher.Path = Directory.GetCurrentDirectory();
@@ -93,6 +93,7 @@ namespace BoothWatcher
             discordWebhook.Start();
             
             BoothWatcher_Elapsed();
+            Console.WriteLine("started file event watcher");
             fileSystemWatcher.EnableRaisingEvents = true;
             Thread.Sleep(-1);
         }

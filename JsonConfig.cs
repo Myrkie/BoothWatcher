@@ -14,7 +14,7 @@ namespace BoothWatcher
             [JsonProperty("Startup Message")]
             public string _startupMessage { get; set; } = "Starting Up";
             [JsonProperty("WebHook Override name")]
-            public string _username { get; set; } = $"BoothWatcher - V{typeof(Program).Assembly.GetName().Version}";
+            public string _username { get; set; } = $"BoothWatcher - V{typeof(BoothWatcher).Assembly.GetName().Version}";
             [JsonProperty("Avatar Icon")]
             public string _avatarUrl { get; set; } = "https://i.imgur.com/gEJk8uX.jpg";
             [JsonProperty("Embed Footer Icon")]
