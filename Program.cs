@@ -22,7 +22,6 @@ namespace BoothWatcher
             fileSystemWatcher.Path = Directory.GetCurrentDirectory();
             fileSystemWatcher.Filter = JsonConfig._configpath;
             fileSystemWatcher.Changed += OnChanged;
-            fileSystemWatcher.EnableRaisingEvents = true;
 
             JsonConfig.Configure.load();
             if (File.Exists(JsonConfig._config._alreadyadded))
@@ -50,6 +49,7 @@ namespace BoothWatcher
                         Console.WriteLine("Added, leave blank to finish");
                     }
                 }
+                Startloop();
 
                 #endregion
             }
@@ -89,6 +89,7 @@ namespace BoothWatcher
             discordWebhook.Start();
             
             BoothWatcher_Elapsed();
+            fileSystemWatcher.EnableRaisingEvents = true;
             Thread.Sleep(-1);
         }
 
