@@ -157,7 +157,7 @@ namespace BoothWatcher
                             StartInfo = new ProcessStartInfo
                             {
                                 FileName = "BoothDownloader",
-                                Arguments = item.Id,
+                                Arguments = $"--booth {item.Id}",
                                 UseShellExecute = false,
                                 RedirectStandardOutput = true,
                                 CreateNoWindow = true
