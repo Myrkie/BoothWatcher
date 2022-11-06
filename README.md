@@ -57,7 +57,8 @@ Get notified of new booth models using discord webhooks in c#
   "Proxy Password": "proxy-password",
   "Proxy Host": "proxy-host",
 
-  "_tts": false
+  "_tts": false,
+  "_savefiles": false
 }
 ```
 

@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Net;
+using System.Text;
 using System.Text.RegularExpressions;
 using JNogueira.Discord.Webhook.Client;
 using DeeplTranslator = Deepl.Deepl;
@@ -13,7 +14,8 @@ namespace BoothWatcher
         static Queue<BoothItem> _items = new();
         static List<DiscordWebhookClient> _clients = new();
         static HashSet<string> _alreadyAddedId = new();
-        private static DeeplTranslator translate;
+        private static DeeplTranslator? translate;
+        private static bool _warning;
         private static bool _firstartup = true;
         private static DiscordFile? _fileuploadDiscordFile;
         private static string path;
@@ -27,7 +29,7 @@ namespace BoothWatcher
             fileSystemWatcher.Filter = JsonConfig._configpath;
             fileSystemWatcher.Changed += OnChanged;
 
-            JsonConfig.Configure.load();
+            JsonConfig.Configure.Load();
             if (File.Exists(JsonConfig._config._alreadyadded))
                 foreach (string id in File.ReadAllLines(JsonConfig._config._alreadyadded))
                     _alreadyAddedId.Add(id);
@@ -41,7 +43,7 @@ namespace BoothWatcher
                 bool doLoop = true;
                 while (doLoop)
                 {
-                    string userinput = Console.ReadLine();
+                    string? userinput = Console.ReadLine();
                     if (string.IsNullOrEmpty(userinput))
                     {
                         doLoop = false;
@@ -104,13 +106,13 @@ namespace BoothWatcher
 
             Console.WriteLine("Config file changed, reloading");
             Thread.Sleep(5000);
-            JsonConfig.Configure.load();
+            JsonConfig.Configure.Load();
         }
 
         private static void Startloop()
         {
             Console.WriteLine("Starting With: " + JsonConfig._config._webhook.Count + " Webhook Connections");
-            foreach (string webhook in JsonConfig._config._webhook)
+            foreach (string? webhook in JsonConfig._config._webhook)
             {
                 _clients.Add(new DiscordWebhookClient(webhook));
             }
@@ -144,7 +146,6 @@ namespace BoothWatcher
                 }
 
                 #region FileDL/Upload
-                // this shit sucks and I don't know why it works but it does so fuck it until it breaks.
                 var boothdownloader = Directory.GetFiles(Directory.GetCurrentDirectory(),"BoothDownloader" + ".*");
                 if (boothdownloader.Length > 0)
                 {
@@ -180,14 +181,23 @@ namespace BoothWatcher
                                 var name = path.Split('/').Last();
                             
                                 _fileuploadDiscordFile = new DiscordFile(name, file);
-                                Console.WriteLine("Uploading Filesize: " + ConvertBytesToMegabytes(fileInfo.Length) + "MB");
+                                Console.WriteLine($"Uploading Filesize: {ConvertBytesToMegabytes(fileInfo.Length)} MB");
                             
-                            }else Console.WriteLine("File is too big skipping upload: " + ConvertBytesToMegabytes(fileInfo.Length) + "MB");
+                            }else Console.WriteLine($"File is too big skipping upload: {ConvertBytesToMegabytes(fileInfo.Length)} MB");
                         }
                         proc.StandardOutput.Close();
                         proc.Close();
                     }
-                }else Console.WriteLine("BoothDownloader not found, ignoring download");
+                }
+                else
+                {
+                    if (!_warning)
+                    {
+                        Console.WriteLine("BoothDownloader not found, ignoring download");
+                    }
+
+                    _warning = true;
+                }
 
                 #endregion
                 
@@ -202,8 +212,11 @@ namespace BoothWatcher
                     if (_fileuploadDiscordFile != null)
                     {
                         client.SendToDiscord(message, new[]{_fileuploadDiscordFile});
-                        File.Delete(path);
-                        Console.WriteLine("file pushed to discord and deleted from local storage");
+                        if (!JsonConfig._config._savefiles)
+                        {
+                            File.Delete(path);
+                            Console.WriteLine("file pushed to discord and deleted from local storage");
+                        }
                         _fileuploadDiscordFile = null;
                     }else client.SendToDiscord(message);
                 });
@@ -249,7 +262,10 @@ namespace BoothWatcher
                     Console.WriteLine("No items added to queue");
                 }
             }
-            catch { }
+            catch (Exception exception)
+            {
+                Console.WriteLine($"exception at method BoothWatcher_Elapsed {exception}");
+            }
         }
 
         private static void StartupCheck()

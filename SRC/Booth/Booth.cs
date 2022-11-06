@@ -13,10 +13,6 @@
             client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/98.0.4758.80 Safari/537.36 Edg/98.0.1108.50");
             client.DefaultRequestHeaders.Add("cookie", "adult=t");
         }
-        //this is going to hurt a lot of people lol but I'm lazy
-        //tbh it works, Ill look into learning HTML Agility pack later
-        // TODO Possibly change the below async task to use HTML Agility instead of String Split
-        // // wont happen lol
         public async Task<List<BoothItem>> GetNewBoothItemAsync()
         {
             List<BoothItem> items = new();
@@ -27,34 +23,47 @@
                 string content = await response.Content.ReadAsStringAsync();
                 content = content.Replace("<", "\r\n<");
                 string[] itemcards = content.Split("<li class=\"item-card");
-                foreach (string itemcard in itemcards) 
+                foreach (string itemcard in itemcards)
                 {
                     BoothItem item = new();
                     StringReader reader = new(itemcard);
                     string line;
                     while ((line = reader.ReadLine()) != null)
                     {
-                        if(line.Contains("data-product-id="))
+                        if (line.Contains("data-product-id="))
                             item.Id = line.Split("data-product-id=\"", StringSplitOptions.None)[1].Split('"')[0];
                         if (line.Contains("data-original"))
-                            item.thumbnailImageUrls.Add(line.Split("data-original=\"", StringSplitOptions.None)[1].Split('"')[0]);
+                            item.thumbnailImageUrls.Add(line.Split("data-original=\"", StringSplitOptions.None)[1]
+                                .Split('"')[0]);
                         if (line.Contains("item-card__title-anchor--multiline nav"))
-                            item.Title = line.Split("item-card__title-anchor--multiline nav\"", StringSplitOptions.None)[1].Split('>')[1];
+                            item.Title =
+                                line.Split("item-card__title-anchor--multiline nav\"", StringSplitOptions.None)[1]
+                                    .Split('>')[1];
                         if (line.Contains("price u-text-primary u-text-left u-tpg-caption2\">"))
-                            item.Price = line.Split("price u-text-primary u-text-left u-tpg-caption2\">", StringSplitOptions.None)[1];
+                            item.Price = line.Split("price u-text-primary u-text-left u-tpg-caption2\">",
+                                StringSplitOptions.None)[1];
                         if (line.Contains("class=\"item-card__shop-name\">"))
                             item.ShopName = line.Split("class=\"item-card__shop-name\">")[1];
                         if (line.Contains("item-card__shop-name-anchor"))
-                            item.ShopUrl = line.Split("item-card__shop-name-anchor", StringSplitOptions.None)[1].Split("href=\"")[1].Split('"')[0];
+                            item.ShopUrl =
+                                line.Split("item-card__shop-name-anchor", StringSplitOptions.None)[1]
+                                    .Split("href=\"")[1].Split('"')[0];
                         if (line.Contains("user-avatar"))
-                            item.ShopImageUrl = line.Split("user-avatar", StringSplitOptions.None)[1].Split("src=\"", StringSplitOptions.None)[1].Split('"')[0];
+                            item.ShopImageUrl =
+                                line.Split("user-avatar", StringSplitOptions.None)[1]
+                                    .Split("src=\"", StringSplitOptions.None)[1].Split('"')[0];
                     }
+
                     items.Add(item);
                 }
+
                 items.RemoveAt(0);
                 return items;
             }
-            catch { }
+            catch (Exception exception)
+            {
+                Console.WriteLine($"exception at method GetNewBoothItemAsync {exception}");
+            }
             items.RemoveAt(0);
             return items;
         }

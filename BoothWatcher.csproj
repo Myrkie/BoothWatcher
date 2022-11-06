@@ -5,13 +5,15 @@
     <TargetFramework>net6.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyVersion>2.4</AssemblyVersion>
-    <FileVersion>2.4</FileVersion>
-    <PackageVersion>2.4.0</PackageVersion>
+    <AssemblyVersion>2.5</AssemblyVersion>
+    <FileVersion>2.5</FileVersion>
+    <PackageVersion>2.5.0</PackageVersion>
+    <ApplicationIcon>Icon\store-logo-booth.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
     <None Remove="discord-webhook-client.dll" />
+    <None Remove="Publish\**" />
   </ItemGroup>
 
   <ItemGroup>
@@ -27,6 +29,14 @@
 
   <ItemGroup>
     <Folder Include="GitImages" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="Publish\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Remove="Publish\**" />
   </ItemGroup>
 
 </Project>

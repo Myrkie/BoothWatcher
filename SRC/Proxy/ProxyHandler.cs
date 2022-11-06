@@ -20,9 +20,9 @@ namespace BoothWatcher
                 wc.DownloadFileCompleted += DownloadProcessCompleteCallBack;
                 wc.DownloadFileAsync(new Uri(uri), _proxiefile);
             }
-            catch (Exception ext)
+            catch (Exception exception)
             {
-                Console.WriteLine($"Exception created in DownloadFreeProxies {ext.StackTrace}");
+                Console.WriteLine($"exception at method DownloadFreeProxies {exception}");
 
             }
         }
@@ -53,9 +53,9 @@ namespace BoothWatcher
                     Addproxies();
                 }
             }
-            catch (Exception ext)
+            catch (Exception exception)
             {
-                Console.WriteLine($"Exception created in DownloadProcessCompleteCallback {ext.StackTrace}");
+                Console.WriteLine($"exception at method DownloadProcessCompleteCallBack {exception}");
             }
 
         }

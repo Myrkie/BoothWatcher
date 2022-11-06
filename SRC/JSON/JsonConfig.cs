@@ -5,7 +5,7 @@ namespace BoothWatcher
     public class JsonConfig
     {
         public static string _configpath = "BWConfig.json";
-        public static Config _config = new Config();
+        public static Config? _config = new Config();
 
         public class Config
         {
@@ -20,7 +20,7 @@ namespace BoothWatcher
             [JsonProperty("Embed Footer Icon")]
             public string _footerIconAvatar { get; set; } = "https://i.imgur.com/gEJk8uX.jpg";
             [JsonProperty("Webhooks")]
-            public List<string> _webhook { get; set; } = new(); 
+            public List<string?> _webhook { get; set; } = new(); 
             [JsonProperty("Watchlist")]
             public List<string> _watchlist { get; set; } = new();
             [JsonProperty("Blacklist")]
@@ -37,11 +37,12 @@ namespace BoothWatcher
             public string _proxyHost { get; set; } = "";
             
             public bool _tts { get; set; } = false;
+            public bool _savefiles { get; set; } = false;
         }
 
         public static class Configure
         {
-            public static void load()
+            public static void Load()
             {
                 try
                 {
@@ -54,9 +55,9 @@ namespace BoothWatcher
                         loadconf();
                     }
                 }
-                catch(Exception ex)
+                catch(Exception exception)
                 {
-                    Console.WriteLine(ex.Message);
+                    Console.WriteLine($"exception at method Load {exception}");
                 }
             }
 
