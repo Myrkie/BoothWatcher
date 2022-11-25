@@ -37,7 +37,7 @@
                                 .Split('"')[0]);
                         if (line.Contains("item-card__title-anchor--multiline nav"))
                             item.Title =
-                                line.Split("item-card__title-anchor--multiline nav\"", StringSplitOptions.None)[1]
+                                line.Split("item-card__title-anchor--multiline nav !min-h-[auto]\"", StringSplitOptions.None)[1]
                                     .Split('>')[1];
                         if (line.Contains("price u-text-primary u-text-left u-tpg-caption2\">"))
                             item.Price = line.Split("price u-text-primary u-text-left u-tpg-caption2\">",
