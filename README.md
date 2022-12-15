@@ -56,9 +56,9 @@ Get notified of new booth models using discord webhooks in c#
   "Proxy Username": "proxy-username",
   "Proxy Password": "proxy-password",
   "Proxy Host": "proxy-host",
-
   "_tts": false,
-  "_savefiles": false
+  "_savefiles": false,
+  "WatchListNotification": "// :arrow_down:  Post by author is on watchlist  :arrow_down: //"
 }
 ```
 
