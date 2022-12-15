@@ -4,8 +4,8 @@ namespace BoothWatcher
 {
     public class JsonConfig
     {
-        public static string _configpath = "BWConfig.json";
-        public static Config? _config = new Config();
+        public const string Configpath = "BWConfig.json";
+        public static Config? _config = new();
 
         public class Config
         {
@@ -38,6 +38,9 @@ namespace BoothWatcher
             
             public bool _tts { get; set; } = false;
             public bool _savefiles { get; set; } = false;
+
+            [JsonProperty("WatchListNotification")]
+            public string _notificationtext { get; set; } = "// :arrow_down:  Post by author is on watchlist  :arrow_down: //";
         }
 
         public static class Configure
@@ -46,13 +49,13 @@ namespace BoothWatcher
             {
                 try
                 {
-                    if (!File.Exists(_configpath))
+                    if (!File.Exists(Configpath))
                     {
-                        saveconf();
+                        Saveconf();
                     }
                     else
                     {
-                        loadconf();
+                        Loadconf();
                     }
                 }
                 catch(Exception exception)
@@ -61,10 +64,10 @@ namespace BoothWatcher
                 }
             }
 
-            public static void forcesave() => saveconf();
-            private static void loadconf() => _config = JsonConvert.DeserializeObject<Config>(File.ReadAllText(_configpath));
+            public static void Forcesave() => Saveconf();
+            private static void Loadconf() => _config = JsonConvert.DeserializeObject<Config>(File.ReadAllText(Configpath));
 
-            private static void saveconf() => File.WriteAllText(_configpath, JsonConvert.SerializeObject(_config, Formatting.Indented));
+            private static void Saveconf() => File.WriteAllText(Configpath, JsonConvert.SerializeObject(_config, Formatting.Indented));
         }
     }
 }

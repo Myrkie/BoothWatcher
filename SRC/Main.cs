@@ -26,7 +26,7 @@ namespace BoothWatcher
             using var fileSystemWatcher = new FileSystemWatcher();
             fileSystemWatcher.NotifyFilter = NotifyFilters.LastWrite;
             fileSystemWatcher.Path = Directory.GetCurrentDirectory();
-            fileSystemWatcher.Filter = JsonConfig._configpath;
+            fileSystemWatcher.Filter = JsonConfig.Configpath;
             fileSystemWatcher.Changed += OnChanged;
 
             JsonConfig.Configure.Load();
@@ -51,7 +51,7 @@ namespace BoothWatcher
                     else
                     {
                         JsonConfig._config._webhook.Add(userinput);
-                        JsonConfig.Configure.forcesave();
+                        JsonConfig.Configure.Forcesave();
                         Console.WriteLine("Added, leave blank to finish");
                     }
                 }
@@ -312,7 +312,7 @@ namespace BoothWatcher
             {
                 _clients.ForEach(client =>
                 { 
-                    DiscordMessage? watchlistitem = new($":arrow_down:  Post by author is on watchlist  :arrow_down: // <{item.ShopUrl}>", username: JsonConfig._config._username, avatarUrl: JsonConfig._config._avatarUrl, tts: JsonConfig._config._tts);
+                    DiscordMessage? watchlistitem = new($"{JsonConfig._config._notificationtext} <{item.ShopUrl}>", username: JsonConfig._config._username, avatarUrl: JsonConfig._config._avatarUrl, tts: JsonConfig._config._tts);
                     client.SendToDiscord(watchlistitem);
                 });
             }
