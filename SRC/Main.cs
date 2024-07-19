@@ -116,6 +116,8 @@ namespace BoothWatcher
             {
                 _clients.Add(new DiscordWebhookClient(webhook));
             }
+
+            StartupCheck();
         }
 
         private static void DiscordWebhook_Elapsed(object? sender, System.Timers.ElapsedEventArgs e)
@@ -206,8 +208,7 @@ namespace BoothWatcher
 
                 _clients.ForEach(client =>
                 {
-                    StartupCheck();
-                    CheckWatchList(item);
+                    CheckWatchList(client, item);
                     Thread.Sleep(1000);
                     if (_fileuploadDiscordFile != null)
                     {
@@ -258,7 +259,6 @@ namespace BoothWatcher
                     Console.WriteLine($"Added {newitemscount} to queue");
                 else
                 {
-                    StartupCheck();
                     Console.WriteLine("No items added to queue");
                 }
             }
@@ -306,15 +306,13 @@ namespace BoothWatcher
             return !list.Any();
         }
 
-        private static void CheckWatchList(BoothItem item)
+        private static void CheckWatchList(DiscordWebhookClient client, BoothItem item)
         {
+            Console.WriteLine("watchlist checked");
             if (JsonConfig._config._watchlist.Contains(item.ShopUrl))
             {
-                _clients.ForEach(client =>
-                { 
-                    DiscordMessage? watchlistitem = new($"{JsonConfig._config._notificationtext} <{item.ShopUrl}>", username: JsonConfig._config._username, avatarUrl: JsonConfig._config._avatarUrl, tts: JsonConfig._config._tts);
-                    client.SendToDiscord(watchlistitem);
-                });
+                DiscordMessage? watchlistitem = new($"{JsonConfig._config._notificationtext} <{item.ShopUrl}>", username: JsonConfig._config._username, avatarUrl: JsonConfig._config._avatarUrl, tts: JsonConfig._config._tts);
+                client.SendToDiscord(watchlistitem);
             }
         }
     }
