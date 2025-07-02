@@ -2,7 +2,6 @@
 Get notified of new booth models using discord webhooks in c#
 
 ## Features ##
-* Built with .net 6 for multi platform support.
 * Support for multiple webhooks.
 * Author post notification.
 * Author Blacklist.
@@ -17,7 +16,7 @@ Get notified of new booth models using discord webhooks in c#
 
 ## Requirements ##
 * no requirements needed to run.
-* .net 6 required to compile.
+* .net 9 required to compile.
 
 
 ## Auto Download ##

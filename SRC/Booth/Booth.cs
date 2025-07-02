@@ -44,9 +44,9 @@
                                 StringSplitOptions.None)[1];
                         if (line.Contains("class=\"item-card__shop-name\">"))
                             item.ShopName = line.Split("class=\"item-card__shop-name\">")[1];
-                        if (line.Contains("item-card__shop-name-anchor"))
+                        if (line.Contains("item-card__shop-name-anchor nav"))
                             item.ShopUrl =
-                                line.Split("item-card__shop-name-anchor", StringSplitOptions.None)[1]
+                                line.Split("item-card__shop-name-anchor nav", StringSplitOptions.None)[1]
                                     .Split("href=\"")[1].Split('"')[0];
                         if (line.Contains("user-avatar"))
                             item.ShopImageUrl =
