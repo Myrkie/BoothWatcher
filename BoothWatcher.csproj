@@ -5,9 +5,9 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <AssemblyVersion>2.8.0.0</AssemblyVersion>
-    <FileVersion>2.8.0.0</FileVersion>
-    <ProductVersion>2.8.0.0</ProductVersion>
+    <AssemblyVersion>2.8.0.1</AssemblyVersion>
+    <FileVersion>2.8.0.1</FileVersion>
+    <ProductVersion>2.8.0.1</ProductVersion>
     <ApplicationIcon>Icon\store-logo-booth.ico</ApplicationIcon>
   </PropertyGroup>
 

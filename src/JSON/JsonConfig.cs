@@ -1,73 +1,97 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json;
+using System.Text.Json.Serialization;
 
-namespace BoothWatcher
+namespace BoothWatcher.JSON
 {
+    [JsonSerializable(typeof(JsonConfig))]
+    [JsonSourceGenerationOptions(GenerationMode = JsonSourceGenerationMode.Default, WriteIndented = true, AllowTrailingCommas = true)]
+    internal partial class ConfigSourceGenerationContext : JsonSerializerContext;
+
+    [Serializable]
     public class JsonConfig
     {
-        public const string Configpath = "BWConfig.json";
-        public static Config? _config = new();
-
-        public class Config
+        private static FileSystemWatcher _fileSystemWatcher = new();
+        static JsonConfig()
         {
-            [JsonProperty("Embed FooterText")]
-            public string _footerText { get; set; } = "Made by Keafy & Myrkur";
-            [JsonProperty("Startup Message")]
-            public string _startupMessage { get; set; } = "Starting Up";
-            [JsonProperty("WebHook Override name")]
-            public string _username { get; set; } = $"BoothWatcher - V{typeof(BoothWatcher).Assembly.GetName().Version}";
-            [JsonProperty("Avatar Icon")]
-            public string _avatarUrl { get; set; } = "https://i.imgur.com/gEJk8uX.jpg";
-            [JsonProperty("Embed Footer Icon")]
-            public string _footerIconAvatar { get; set; } = "https://i.imgur.com/gEJk8uX.jpg";
-            [JsonProperty("Webhooks")]
-            public List<string?> _webhook { get; set; } = new(); 
-            [JsonProperty("Watchlist")]
-            public List<string> _watchlist { get; set; } = new();
-            [JsonProperty("Blacklist")]
-            public List<string> _blacklist { get; set; } = new();
-            [JsonProperty("KeywordBlacklist")]
-            public List<string> _keywordblacklist { get; set; } = new();
-            [JsonProperty("Already Posted list")]
-            public string _alreadyadded { get; set; } = "AlreadyAddedId.txt";
-            [JsonProperty("Proxy Username")]
-            public string _proxyUsername { get; set; } = "";
-            [JsonProperty("Proxy Password")]
-            public string _proxyPassword { get; set; } = "";
-            [JsonProperty("Proxy Host")]
-            public string _proxyHost { get; set; } = "";
             
-            public bool _tts { get; set; } = false;
-            public bool _savefiles { get; set; } = false;
-
-            [JsonProperty("WatchListNotification")]
-            public string _notificationtext { get; set; } = "// :arrow_down:  Post by author is on watchlist  :arrow_down: //";
-        }
-
-        public static class Configure
-        {
-            public static void Load()
+            _instance = LoadConfig();
+            
+            _fileSystemWatcher.NotifyFilter = NotifyFilters.LastWrite;
+            _fileSystemWatcher.EnableRaisingEvents = false;
+            _fileSystemWatcher.Path = Directory.GetCurrentDirectory();
+            _fileSystemWatcher.Filter = ConfigPath;
+            _fileSystemWatcher.Changed += (_, args) =>
             {
-                try
-                {
-                    if (!File.Exists(Configpath))
-                    {
-                        Saveconf();
-                    }
-                    else
-                    {
-                        Loadconf();
-                    }
-                }
-                catch(Exception exception)
-                {
-                    Console.WriteLine($"exception at method Load {exception}");
-                }
+                if (args.ChangeType != WatcherChangeTypes.Changed) return;
+
+                Console.WriteLine("Config file changed, reloading");
+                var reloaded = LoadConfig();
+                reloaded.SaveConfig(); 
+                Thread.Sleep(5000);
+            };
+            
+            _fileSystemWatcher.EnableRaisingEvents = true;
+        }
+        
+        public static readonly string ConfigPath = "BWConfig.json";
+        public static JsonConfig _instance { get; set; }
+        
+        [JsonPropertyName("Embed FooterText")] 
+        public string _footerText { get; set; } = "Made by Keafy & Myrkur";
+        
+        [JsonPropertyName("Startup Message")] 
+        public string _startupMessage { get; set; } = "Starting Up";
+
+        [JsonPropertyName("WebHook Override name")]
+        public string _username { get; set; } = $"BoothWatcher - V{typeof(BoothWatcher).Assembly.GetName().Version}";
+
+        [JsonPropertyName("Avatar Icon")] 
+        public string _avatarUrl { get; set; } = "https://i.imgur.com/gEJk8uX.jpg";
+
+        [JsonPropertyName("Embed Footer Icon")]
+        public string _footerIconAvatar { get; set; } = "https://i.imgur.com/gEJk8uX.jpg";
+
+        [JsonPropertyName("Webhooks")] 
+        public List<string?> _webhook { get; set; } = new();
+        [JsonPropertyName("Watchlist")] 
+        public List<string> _watchlist { get; set; } = new();
+        [JsonPropertyName("Blacklist")] 
+        public List<string> _blacklist { get; set; } = new();
+        [JsonPropertyName("KeywordBlacklist")] 
+        public List<string> _keywordblacklist { get; set; } = new();
+        [JsonPropertyName("Already Posted list")] 
+        public string _alreadyadded { get; set; } = "AlreadyAddedId.txt";
+        [JsonPropertyName("Proxy Username")] 
+        public string _proxyUsername { get; set; } = "";
+        [JsonPropertyName("Proxy Password")] 
+        public string _proxyPassword { get; set; } = "";
+        [JsonPropertyName("Proxy Host")] 
+        public string _proxyHost { get; set; } = "";
+
+        public bool _tts { get; set; }
+        public bool _savefiles { get; set; }
+
+        [JsonPropertyName("WatchListNotification")]
+        public string _notificationtext { get; set; } = "// :arrow_down:  Post by author is on watchlist  :arrow_down: //";
+
+        static JsonConfig LoadConfig()
+        {
+            JsonConfig? cfg = File.Exists(ConfigPath) ? JsonSerializer.Deserialize(File.ReadAllText(ConfigPath), ConfigSourceGenerationContext.Default.JsonConfig) : null;
+            if(cfg == null)
+            {
+                cfg = new JsonConfig();
+                cfg.SaveConfig();
             }
 
-            public static void Forcesave() => Saveconf();
-            private static void Loadconf() => _config = JsonConvert.DeserializeObject<Config>(File.ReadAllText(Configpath));
+            _instance = cfg;
 
-            private static void Saveconf() => File.WriteAllText(Configpath, JsonConvert.SerializeObject(_config, Formatting.Indented));
+            return cfg;
+        }
+
+        void SaveConfig()
+        {
+            string json = JsonSerializer.Serialize(_instance, ConfigSourceGenerationContext.Default.JsonConfig);
+            File.WriteAllText(ConfigPath, json);
         }
     }
 }

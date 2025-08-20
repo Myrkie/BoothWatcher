@@ -2,6 +2,7 @@
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
+using BoothWatcher.JSON;
 using JNogueira.Discord.Webhook.Client;
 using DeeplTranslator = Deepl.Deepl;
 using Language = Deepl.Deepl.Language;
@@ -23,17 +24,12 @@ namespace BoothWatcher
         static void Main(string[] args)
         {
             Console.Title = $"BoothWatcher - V{typeof(BoothWatcher).Assembly.GetName().Version}";
-            using var fileSystemWatcher = new FileSystemWatcher();
-            fileSystemWatcher.NotifyFilter = NotifyFilters.LastWrite;
-            fileSystemWatcher.Path = Directory.GetCurrentDirectory();
-            fileSystemWatcher.Filter = JsonConfig.Configpath;
-            fileSystemWatcher.Changed += OnChanged;
 
-            JsonConfig.Configure.Load();
-            if (File.Exists(JsonConfig._config._alreadyadded))
-                foreach (string id in File.ReadAllLines(JsonConfig._config._alreadyadded))
+            if (File.Exists(JsonConfig._instance._alreadyadded))
+                foreach (string id in File.ReadAllLines(JsonConfig._instance._alreadyadded))
                     _alreadyAddedId.Add(id);
-            bool isEmpty = IsEmpty(JsonConfig._config._webhook);
+            
+            bool isEmpty = IsEmpty(JsonConfig._instance._webhook);
             if (isEmpty)
             {
                 Console.WriteLine("Paste in your webhook URLs here");
@@ -50,8 +46,7 @@ namespace BoothWatcher
                     }
                     else
                     {
-                        JsonConfig._config._webhook.Add(userinput);
-                        JsonConfig.Configure.Forcesave();
+                        JsonConfig._instance._webhook.Add(userinput);
                         Console.WriteLine("Added, leave blank to finish");
                     }
                 }
@@ -75,7 +70,7 @@ namespace BoothWatcher
                 Enabled = true
             };
 
-            if (!string.IsNullOrWhiteSpace(JsonConfig._config._proxyHost))
+            if (!string.IsNullOrWhiteSpace(JsonConfig._instance._proxyHost))
             {
                 Proxyhandler.DownloadFreeProxies();
                 
@@ -95,24 +90,13 @@ namespace BoothWatcher
             discordWebhook.Start();
             
             BoothWatcher_Elapsed();
-            Console.WriteLine("started file event watcher");
-            fileSystemWatcher.EnableRaisingEvents = true;
             Thread.Sleep(-1);
-        }
-
-        private static void OnChanged(object sender, FileSystemEventArgs e)
-        {
-            if (e.ChangeType != WatcherChangeTypes.Changed) return;
-
-            Console.WriteLine("Config file changed, reloading");
-            Thread.Sleep(5000);
-            JsonConfig.Configure.Load();
         }
 
         private static void Startloop()
         {
-            Console.WriteLine("Starting With: " + JsonConfig._config._webhook.Count + " Webhook Connections");
-            foreach (string? webhook in JsonConfig._config._webhook)
+            Console.WriteLine("Starting With: " + JsonConfig._instance._webhook.Count + " Webhook Connections");
+            foreach (string? webhook in JsonConfig._instance._webhook)
             {
                 _clients.Add(new DiscordWebhookClient(webhook));
             }
@@ -127,8 +111,8 @@ namespace BoothWatcher
                 BoothItem? item = _items.Dequeue();
                 List<DiscordMessageEmbed> embeds = new();
 
-                bool containsBlacklisted = JsonConfig._config._keywordblacklist.Any(item.Title.ToLower().Contains) ||
-                                            JsonConfig._config._blacklist.Contains(item.ShopUrl);
+                bool containsBlacklisted = JsonConfig._instance._keywordblacklist.Any(item.Title.ToLower().Contains) ||
+                                            JsonConfig._instance._blacklist.Contains(item.ShopUrl);
                 if (!containsBlacklisted && item.thumbnailImageUrls.Count > 0)
                 {
                     embeds.Add(new DiscordMessageEmbed(item.Title, color: 16711807,
@@ -142,7 +126,7 @@ namespace BoothWatcher
                             new DiscordMessageEmbedField("Translated Title: ", TranslateText(item.Title))
                         },
                         image: new DiscordMessageEmbedImage(item.thumbnailImageUrls[0]),
-                        footer: new DiscordMessageEmbedFooter(JsonConfig._config._footerText, JsonConfig._config._footerIconAvatar)));
+                        footer: new DiscordMessageEmbedFooter(JsonConfig._instance._footerText, JsonConfig._instance._footerIconAvatar)));
                     for (int i = 1; i < 4 && i < item.thumbnailImageUrls.Count; i++)
                         embeds.Add(new DiscordMessageEmbed(url: $"https://booth.pm/en/items/{item.Id}", image: new DiscordMessageEmbedImage(item.thumbnailImageUrls[i])));
                 }
@@ -204,7 +188,7 @@ namespace BoothWatcher
                 #endregion
                 
 
-                DiscordMessage? message = new(username: JsonConfig._config._username, avatarUrl: JsonConfig._config._avatarUrl, tts: JsonConfig._config._tts, embeds: embeds.ToArray());
+                DiscordMessage? message = new(username: JsonConfig._instance._username, avatarUrl: JsonConfig._instance._avatarUrl, tts: JsonConfig._instance._tts, embeds: embeds.ToArray());
 
                 _clients.ForEach(client =>
                 {
@@ -213,7 +197,7 @@ namespace BoothWatcher
                     if (_fileuploadDiscordFile != null)
                     {
                         client.SendToDiscord(message, new[]{_fileuploadDiscordFile});
-                        if (!JsonConfig._config._savefiles)
+                        if (!JsonConfig._instance._savefiles)
                         {
                             File.Delete(path);
                             Console.WriteLine("file pushed to discord and deleted from local storage");
@@ -238,12 +222,12 @@ namespace BoothWatcher
                 {
                     if (!_alreadyAddedId.Contains(item.Id))
                     {
-                        File.AppendAllText(JsonConfig._config._alreadyadded, item.Id + Environment.NewLine);
+                        File.AppendAllText(JsonConfig._instance._alreadyadded, item.Id + Environment.NewLine);
                         _alreadyAddedId.Add(item.Id);
                         _items.Enqueue(item);
                         bool containsBlacklisted =
-                            (JsonConfig._config._keywordblacklist.Any(item.Title.ToLower().Contains) ||
-                             JsonConfig._config._blacklist.Contains(item.ShopUrl));
+                            (JsonConfig._instance._keywordblacklist.Any(item.Title.ToLower().Contains) ||
+                             JsonConfig._instance._blacklist.Contains(item.ShopUrl));
                         if (!containsBlacklisted)
                         {
                             newitemscount++;
@@ -275,9 +259,9 @@ namespace BoothWatcher
                 _firstartup = false;
                 _clients.ForEach(client =>
                 {
-                    DiscordMessage? init = new(JsonConfig._config._startupMessage,
-                        username: JsonConfig._config._username, avatarUrl: JsonConfig._config._avatarUrl,
-                        tts: JsonConfig._config._tts);
+                    DiscordMessage? init = new(JsonConfig._instance._startupMessage,
+                        username: JsonConfig._instance._username, avatarUrl: JsonConfig._instance._avatarUrl,
+                        tts: JsonConfig._instance._tts);
                     client.SendToDiscord(init);
                     Thread.Sleep(4000);
                 });
@@ -286,7 +270,7 @@ namespace BoothWatcher
 
         private static string TranslateText(string input)
         {
-            translate = !string.IsNullOrWhiteSpace(JsonConfig._config._proxyHost) ? new DeeplTranslator(selectedLanguage: Language.JP, targetLanguage: Language.EN, input, Proxyhandler.Randomprox(), new NetworkCredential(JsonConfig._config._proxyUsername, JsonConfig._config._proxyPassword)) : new DeeplTranslator(selectedLanguage: Language.JP, targetLanguage: Language.EN, input);
+            translate = !string.IsNullOrWhiteSpace(JsonConfig._instance._proxyHost) ? new DeeplTranslator(selectedLanguage: Language.JP, targetLanguage: Language.EN, input, Proxyhandler.Randomprox(), new NetworkCredential(JsonConfig._instance._proxyUsername, JsonConfig._instance._proxyPassword)) : new DeeplTranslator(selectedLanguage: Language.JP, targetLanguage: Language.EN, input);
             return string.IsNullOrEmpty(translate.Resp) ? $"{input} \nThis Failed To translate" : translate.Resp;
         }
         
@@ -309,9 +293,9 @@ namespace BoothWatcher
         private static void CheckWatchList(DiscordWebhookClient client, BoothItem item)
         {
             Console.WriteLine("watchlist checked");
-            if (JsonConfig._config._watchlist.Contains(item.ShopUrl))
+            if (JsonConfig._instance._watchlist.Contains(item.ShopUrl))
             {
-                DiscordMessage? watchlistitem = new($"{JsonConfig._config._notificationtext} <{item.ShopUrl}>", username: JsonConfig._config._username, avatarUrl: JsonConfig._config._avatarUrl, tts: JsonConfig._config._tts);
+                DiscordMessage? watchlistitem = new($"{JsonConfig._instance._notificationtext} <{item.ShopUrl}>", username: JsonConfig._instance._username, avatarUrl: JsonConfig._instance._avatarUrl, tts: JsonConfig._instance._tts);
                 client.SendToDiscord(watchlistitem);
             }
         }

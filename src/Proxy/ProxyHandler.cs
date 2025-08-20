@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Net;
+using BoothWatcher.JSON;
 
 namespace BoothWatcher
 {
@@ -15,7 +16,7 @@ namespace BoothWatcher
             try
             {
                 using WebClient wc = new WebClient();
-                var uri = JsonConfig._config._proxyHost;
+                var uri = JsonConfig._instance._proxyHost;
                 wc.DownloadProgressChanged += DownloadProgressCallback;
                 wc.DownloadFileCompleted += DownloadProcessCompleteCallBack;
                 wc.DownloadFileAsync(new Uri(uri), _proxiefile);

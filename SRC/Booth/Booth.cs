@@ -39,8 +39,8 @@
                             item.Title =
                                 line.Split("item-card__title-anchor--multiline nav !min-h-[auto]\"", StringSplitOptions.None)[1]
                                     .Split('>')[1];
-                        if (line.Contains("price u-text-primary u-text-left u-tpg-caption2\">"))
-                            item.Price = line.Split("price u-text-primary u-text-left u-tpg-caption2\">",
+                        if (line.Contains("price text-primary400 text-left u-tpg-caption2\">"))
+                            item.Price = line.Split("price text-primary400 text-left u-tpg-caption2\">",
                                 StringSplitOptions.None)[1];
                         if (line.Contains("class=\"item-card__shop-name\">"))
                             item.ShopName = line.Split("class=\"item-card__shop-name\">")[1];
